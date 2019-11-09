@@ -12,6 +12,7 @@ import (
     "net/http"
     "os"
     "regexp"
+    "strconv"
     "strings"
     "sync"
     "sync/atomic"
@@ -19,6 +20,7 @@ import (
     "unsafe"
 
     "github.com/chengshiwen/influx-proxy/monitor"
+    "github.com/influxdata/influxdb1-client/models"
 )
 
 var (
@@ -47,7 +49,32 @@ func ScanKey(pointbuf []byte) (key string, err error) {
     return "", io.EOF
 }
 
-// faster then bytes.TrimRight, not sure why.
+func Int64ToBytes(n int64) []byte {
+    return []byte(strconv.FormatInt(n, 10))
+}
+
+func BytesToInt64(buf []byte) int64 {
+    var res int64 = 0
+    var length = len(buf)
+    for i := 0; i < length; i++ {
+        res = res * 10 + int64(buf[i]-'0')
+    }
+    return res
+}
+
+func LineToNano(line []byte, precision string) []byte {
+    items := bytes.Split(line, []byte(" "))
+    length := len(items)
+    if length == 3 && precision != "ns" {
+        mul := models.GetPrecisionMultiplier(precision)
+        nano := BytesToInt64(items[2]) * mul
+        items[2] = Int64ToBytes(nano)
+        return bytes.Join(items, []byte(" "))
+    }
+    return line
+}
+
+// faster than bytes.TrimRight, not sure why.
 func TrimRight(p []byte, s []byte) (r []byte) {
     r = p
     if len(r) == 0 {
@@ -70,7 +97,7 @@ type InfluxCluster struct {
     ForbiddenQuery []*regexp.Regexp
     ObligatedQuery []*regexp.Regexp
     cfgsrc         *FileConfigSource
-    bas            []BackendAPI
+    bas            []BackendAPI // nexts: the backends keys, will accept all data, split with ','
     backends       map[string]BackendAPI
     m2bs           map[string][]BackendAPI // measurements to backends
     stats          *Statistics
@@ -184,7 +211,7 @@ func (ic *InfluxCluster) WriteStatistics() (err error) {
     if err != nil {
         return
     }
-    return ic.Write([]byte(line + "\n"))
+    return ic.Write([]byte(line + "\n"), "ns")
 }
 
 func (ic *InfluxCluster) ForbidQuery(s string) (err error) {
@@ -447,8 +474,6 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 // So don't try to return error, just print it.
 func (ic *InfluxCluster) WriteRow(line []byte) {
     atomic.AddInt64(&ic.stats.PointsWritten, 1)
-    // maybe trim?
-    line = bytes.TrimRight(line, " \t\r\n")
 
     // empty line, ignore it.
     if len(line) == 0 {
@@ -470,7 +495,7 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
         return
     }
 
-    // don't block here for a lont time, we just have one worker.
+    // don't block here for a long time, we just have one worker.
     for _, b := range bs {
         err = b.Write(line)
         if err != nil {
@@ -482,7 +507,7 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
     return
 }
 
-func (ic *InfluxCluster) Write(p []byte) (err error) {
+func (ic *InfluxCluster) Write(p []byte, precision string) (err error) {
     atomic.AddInt64(&ic.stats.WriteRequests, 1)
     defer func(start time.Time) {
         atomic.AddInt64(&ic.stats.WriteRequestDuration, time.Since(start).Nanoseconds())
@@ -506,9 +531,11 @@ func (ic *InfluxCluster) Write(p []byte) (err error) {
             break
         }
 
+        line = LineToNano(bytes.TrimRight(line, " \t\r\n"), precision)
         ic.WriteRow(line)
     }
 
+    // TODO: fix precision problem when len(ic.bas) > 0
     ic.lock.RLock()
     defer ic.lock.RUnlock()
     if len(ic.bas) > 0 {

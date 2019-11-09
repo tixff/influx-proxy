@@ -132,7 +132,11 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
         return
     }
 
-    err = hs.ic.Write(p)
+    precision := req.URL.Query().Get("precision")
+    if precision == "" {
+        precision = "ns"
+    }
+    err = hs.ic.Write(p, precision)
     if err == nil {
         w.WriteHeader(204)
     }
