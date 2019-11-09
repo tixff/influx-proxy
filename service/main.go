@@ -12,9 +12,8 @@ import (
     "os"
     "time"
 
-    "gopkg.in/natefinch/lumberjack.v2"
-
     "github.com/chengshiwen/influx-proxy/backend"
+    "gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -22,6 +21,7 @@ var (
     ConfigFile  string
     NodeName    string
     LogPath     string
+    DataDir     string
 )
 
 func init() {
@@ -29,7 +29,8 @@ func init() {
 
     flag.StringVar(&ConfigFile, "config", "proxy.json", "proxy config file")
     flag.StringVar(&NodeName, "node", "l1", "node name")
-    flag.StringVar(&LogPath, "log-path", "influx-proxy.log", "log file path")
+    flag.StringVar(&LogPath, "log-path", "proxy.log", "log file path")
+    flag.StringVar(&DataDir, "data-dir", "data", "data dir to save .dat .rec")
     flag.Parse()
 }
 
@@ -46,10 +47,32 @@ func initLog() {
     }
 }
 
+func pathExists(path string) (bool, error) {
+    _, err := os.Stat(path)
+    if err == nil {
+        return true, nil
+    }
+    if os.IsNotExist(err) {
+        return false, nil
+    }
+    return false, err
+}
+
 func main() {
     initLog()
 
-    var err error
+    exist, err := pathExists(DataDir)
+    if err != nil {
+        log.Println("check data dir error")
+        return
+    }
+    if !exist {
+        err = os.MkdirAll(DataDir, os.ModePerm)
+        if err != nil {
+            log.Println("create data dir error")
+            return
+        }
+    }
 
     fcs := backend.NewFileConfigSource(ConfigFile, NodeName)
 
@@ -59,7 +82,7 @@ func main() {
         return
     }
 
-    ic := backend.NewInfluxCluster(fcs, &nodecfg)
+    ic := backend.NewInfluxCluster(fcs, &nodecfg, DataDir)
     ic.LoadConfig()
 
     mux := http.NewServeMux()

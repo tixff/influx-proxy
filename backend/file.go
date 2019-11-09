@@ -16,33 +16,35 @@ import (
 type FileBackend struct {
     lock     sync.Mutex
     filename string
+    datadir  string
     dataflag bool
     producer *os.File
     consumer *os.File
     meta     *os.File
 }
 
-func NewFileBackend(filename string) (fb *FileBackend, err error) {
+func NewFileBackend(filename string, datadir string) (fb *FileBackend, err error) {
     fb = &FileBackend{
         filename: filename,
+        datadir: datadir,
         dataflag: false,
     }
 
-    fb.producer, err = os.OpenFile(filepath.Join(os.Getenv("INFLUX_PROXY_DATA_DIR"), filename+".dat"),
+    fb.producer, err = os.OpenFile(filepath.Join(datadir, filename+".dat"),
         os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
     if err != nil {
         log.Print("open producer error: ", err)
         return
     }
 
-    fb.consumer, err = os.OpenFile(filepath.Join(os.Getenv("INFLUX_PROXY_DATA_DIR"), filename+".dat"),
+    fb.consumer, err = os.OpenFile(filepath.Join(datadir, filename+".dat"),
         os.O_RDONLY, 0644)
     if err != nil {
         log.Print("open consumer error: ", err)
         return
     }
 
-    fb.meta, err = os.OpenFile(filepath.Join(os.Getenv("INFLUX_PROXY_DATA_DIR"), filename+".rec"),
+    fb.meta, err = os.OpenFile(filepath.Join(datadir, filename+".rec"),
         os.O_RDWR|os.O_CREATE, 0644)
     if err != nil {
         log.Print("open meta error: ", err)
@@ -135,7 +137,7 @@ func (fb *FileBackend) CleanUp() (err error) {
         return
     }
 
-    fb.producer, err = os.OpenFile(filepath.Join(os.Getenv("INFLUX_PROXY_DATA_DIR"), fb.filename+".dat"),
+    fb.producer, err = os.OpenFile(filepath.Join(fb.datadir, fb.filename+".dat"),
         os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
     if err != nil {
         log.Print("open producer error: ", err)
