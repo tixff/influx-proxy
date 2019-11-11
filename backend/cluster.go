@@ -27,6 +27,7 @@ var (
     ErrClosed          = errors.New("write in a closed file")
     ErrBackendNotExist = errors.New("use a backend not exists")
     ErrQueryForbidden  = errors.New("query forbidden")
+    ErrNotClusterQuery = errors.New("not a cluster query")
 )
 
 func ScanKey(pointbuf []byte) (key string, err error) {
@@ -96,6 +97,7 @@ type InfluxCluster struct {
     query_executor Querier
     ForbiddenQuery []*regexp.Regexp
     ObligatedQuery []*regexp.Regexp
+    ExecutedQuery  []*regexp.Regexp
     cfgsrc         *FileConfigSource
     bas            []BackendAPI // nexts: the backends keys, will accept all data, split with ','
     backends       map[string]BackendAPI
@@ -152,6 +154,11 @@ func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig, datadir str
         return
     }
     err = ic.EnsureQuery(SupportCmds)
+    if err != nil {
+        panic(err)
+        return
+    }
+    err = ic.ExecuteQuery(ExecutorCmds)
     if err != nil {
         panic(err)
         return
@@ -235,6 +242,18 @@ func (ic *InfluxCluster) EnsureQuery(s string) (err error) {
     ic.lock.Lock()
     defer ic.lock.Unlock()
     ic.ObligatedQuery = append(ic.ObligatedQuery, r)
+    return
+}
+
+func (ic *InfluxCluster) ExecuteQuery(s string) (err error) {
+    r, err := regexp.Compile(s)
+    if err != nil {
+        return
+    }
+
+    ic.lock.Lock()
+    defer ic.lock.Unlock()
+    ic.ExecutedQuery = append(ic.ExecutedQuery, r)
     return
 }
 
@@ -333,7 +352,7 @@ func (ic *InfluxCluster) Ping() (version string, err error) {
     return
 }
 
-func (ic *InfluxCluster) CheckQuery(q string) (err error) {
+func (ic *InfluxCluster) CheckMeasurementQuery(q string) (err error) {
     ic.lock.RLock()
     defer ic.lock.RUnlock()
 
@@ -352,6 +371,22 @@ func (ic *InfluxCluster) CheckQuery(q string) (err error) {
             }
         }
         return ErrQueryForbidden
+    }
+
+    return
+}
+
+func (ic *InfluxCluster) CheckClusterQuery(q string) (err error) {
+    ic.lock.RLock()
+    defer ic.lock.RUnlock()
+
+    if len(ic.ExecutedQuery) != 0 {
+        for _, pq := range ic.ExecutedQuery {
+            if pq.MatchString(q) {
+                return
+            }
+        }
+        return ErrNotClusterQuery
     }
 
     return
@@ -404,13 +439,18 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
         return
     }
 
-    err = ic.query_executor.Query(w, req)
-    if err == nil {
-        return
-    }
-
-    err = ic.CheckQuery(q)
+    err = ic.CheckMeasurementQuery(q)
     if err != nil {
+        err = ic.CheckClusterQuery(q)
+        if err == nil {
+            err = ic.query_executor.Query(w, req)
+            if err != nil {
+                w.WriteHeader(400)
+                w.Write([]byte("query error"))
+                atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
+            }
+            return
+        }
         w.WriteHeader(400)
         w.Write([]byte("query forbidden"))
         atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)

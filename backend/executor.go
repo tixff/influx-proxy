@@ -6,26 +6,14 @@
 package backend
 
 import (
-    "errors"
     "net/http"
-    "regexp"
-    "strings"
-)
-
-var (
-    ErrNotClusterQuery = errors.New("not a cluster query")
 )
 
 type InfluxQLExecutor struct {
 }
 
 func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request) (err error) {
-    q := strings.TrimSpace(req.FormValue("q"))
-    // better way??
-    matched, err := regexp.MatchString(ExecutorCmds, q)
-    if err != nil || !matched {
-        return ErrNotClusterQuery
-    }
+    // q := strings.TrimSpace(req.FormValue("q"))
 
     w.WriteHeader(200)
     w.Write([]byte(""))
