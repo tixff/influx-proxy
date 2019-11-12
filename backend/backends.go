@@ -37,13 +37,11 @@ type Backends struct {
 func NewBackends(cfg *BackendConfig, name string, datadir string) (bs *Backends, err error) {
     bs = &Backends{
         HttpBackend: NewHttpBackend(cfg),
-        // FIXME: path...
         Interval:        cfg.Interval,
         RewriteInterval: cfg.RewriteInterval,
         running:         true,
         ticker:          time.NewTicker(time.Millisecond * time.Duration(cfg.RewriteInterval)),
         ch_write:        make(chan []byte, 16),
-
         rewriter_running: false,
         MaxRowLimit:      int32(cfg.MaxRowLimit),
     }

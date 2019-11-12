@@ -88,8 +88,6 @@ func TrimRight(p []byte, s []byte) (r []byte) {
     return r[0 : i+1]
 }
 
-// TODO: kafka next
-
 type InfluxCluster struct {
     lock           sync.RWMutex
     Zone           string
@@ -430,7 +428,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
         return
     }
 
-    // TODO: all query in q?
+    // TODO: multi queries in q?
     q := strings.TrimSpace(req.FormValue("q"))
     if q == "" {
         w.WriteHeader(400)
@@ -531,7 +529,6 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
     if !ok {
         log.Printf("new measurement: %s\n", key)
         atomic.AddInt64(&ic.stats.PointsWrittenFail, 1)
-        // TODO: new measurement?
         return
     }
 
@@ -575,7 +572,7 @@ func (ic *InfluxCluster) Write(p []byte, precision string) (err error) {
         ic.WriteRow(line)
     }
 
-    // TODO: fix precision problem when len(ic.bas) > 0
+    // FIXME: precision problem when len(ic.bas) > 0
     ic.lock.RLock()
     defer ic.lock.RUnlock()
     if len(ic.bas) > 0 {

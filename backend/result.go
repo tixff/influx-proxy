@@ -108,7 +108,7 @@ func (rs *ResultSet) UnmarshalJSON(b []byte) error {
     return nil
 }
 
-// TODO: all query in q?
+// TODO: multi queries in q?
 func SeriesFromResultSetBytes(b []byte) (series []*models.Row, err error) {
     rs := &ResultSet{}
     err = rs.UnmarshalJSON(b)
