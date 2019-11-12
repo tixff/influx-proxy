@@ -11,13 +11,25 @@ import (
     "net/http/httptest"
     "net/url"
     "testing"
+
+    "github.com/influxdata/influxdb1-client/models"
 )
 
 func HandlerAny(w http.ResponseWriter, req *http.Request) {
     defer req.Body.Close()
     log.Printf("handler any get url: %s", req.URL)
     w.Header().Add("X-Influxdb-Version", VERSION)
-    w.WriteHeader(204)
+    if req.URL.Path == "/write" || req.URL.Path == "/ping" {
+        w.WriteHeader(http.StatusNoContent)
+    } else {
+        w.WriteHeader(http.StatusOK)
+        rb, _ := ResultSetBytesFromSeries([]*models.Row{{
+            Name: "test",
+            Columns: []string{"name"},
+            Values: [][]interface{}{{"value"}},
+        }})
+        w.Write(rb)
+    }
     return
 }
 
@@ -137,7 +149,7 @@ func TestHttpBackendQuery(t *testing.T) {
         return
     }
 
-    if w.status != 204 {
+    if w.status != http.StatusOK {
         t.Errorf("response error")
         return
     }

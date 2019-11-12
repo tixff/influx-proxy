@@ -28,7 +28,7 @@ func readAndProcess(t *testing.T, fb *FileBackend, s string, l int64) {
         return
     }
 
-    fi, err := os.Stat("../testbk.dat")
+    fi, err := os.Stat("../data/test/testbk.dat")
     if err != nil {
         t.Errorf("error: %s", err)
         return
@@ -43,7 +43,7 @@ func readAndProcess(t *testing.T, fb *FileBackend, s string, l int64) {
 }
 
 func TestFileBackend(t *testing.T) {
-    fb, err := NewFileBackend("../testbk", ".")
+    fb, err := NewFileBackend("testbk", "../data/test")
     if err != nil {
         t.Errorf("error: %s", err)
         return

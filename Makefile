@@ -14,13 +14,20 @@ build:
 	go build -o bin/influx-proxy github.com/chengshiwen/influx-proxy/service
 
 test:
+	rm -rf data/test
+	mkdir -p data/test
 	go test -v github.com/chengshiwen/influx-proxy/backend
 
 bench:
+	rm -rf data/test
+	mkdir -p data/test
 	go test -bench=. github.com/chengshiwen/influx-proxy/backend
 
+run: build
+	bin/influx-proxy -config proxy.json -log-path ""
+
 clean:
-	rm -rf bin
+	rm -rf bin data
 
 
 ### Makefile ends here

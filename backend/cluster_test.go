@@ -79,7 +79,7 @@ func BenchmarkScanKey(b *testing.B) {
 func CreateTestInfluxCluster() (ic *InfluxCluster, err error) {
     fileConfig := &FileConfigSource{}
     nodeConfig := &NodeConfig{}
-    ic = NewInfluxCluster(fileConfig, nodeConfig, ".")
+    ic = NewInfluxCluster(fileConfig, nodeConfig, "../data/test")
     backends := make(map[string]BackendAPI)
     bkcfgs := make(map[string]*BackendConfig)
     cfg, _ := CreateTestBackendConfig("test1")
@@ -90,7 +90,7 @@ func CreateTestInfluxCluster() (ic *InfluxCluster, err error) {
     cfg.WriteOnly = 1
     bkcfgs["write_only"] = cfg
     for name, cfg := range bkcfgs {
-        backends[name], err = NewBackends(cfg, name, ".")
+        backends[name], err = NewBackends(cfg, name, "../data/test")
         if err != nil {
             return
         }
@@ -115,30 +115,40 @@ func TestInfluxdbClusterWrite(t *testing.T) {
     tests := []struct {
         name string
         args []byte
+        unit string
         want error
     }{
         {
             name: "cpu",
+            args: []byte("cpu value=1,value2=2 1434055562000010000"),
+            want: nil,
+        },
+        {
+            name: "cpu",
             args: []byte("cpu value=3,value2=4 1434055562000010000"),
+            unit: "ns",
             want: nil,
         },
         {
             name: "cpu.load",
-            args: []byte("cpu.load value=3,value2=4 1434055562000010000"),
+            args: []byte("cpu.load value=3,value2=4 1434055562000010"),
+            unit: "u",
             want: nil,
         },
         {
             name: "load.cpu",
-            args: []byte("load.cpu value=3,value2=4 1434055562000010000"),
+            args: []byte("load.cpu value=3,value2=4 1434055562000"),
+            unit: "ms",
             want: nil,
         },
         {
             name: "test",
-            args: []byte("test value=3,value2=4 1434055562000010000"),
+            args: []byte("test value=3,value2=4 1434055562"),
+            unit: "s",
         },
     }
     for _, tt := range tests {
-        err := ic.Write(tt.args, "ns")
+        err := ic.Write(tt.args, tt.unit)
         if err != nil {
             t.Error(tt.name, err)
             continue
@@ -182,23 +192,23 @@ func TestInfluxdbClusterQuery(t *testing.T) {
     }{
         {
             name:  "cpu",
-            query: "SELECT * from cpu where time > now() - 1m",
-            want:  400,
+            query: "SELECT * from cpu where time < now() - 1m",
+            want:  200,
         },
         {
             name:  "test",
-            query: "SELECT cpu_load from test WHERE time > now() - 1m",
+            query: "SELECT cpu_load from test",
             want:  400,
         },
         {
             name:  "cpu_load",
-            query: " select cpu_load from cpu WHERE time > now() - 1m",
-            want:  204,
+            query: " select cpu_load from cpu",
+            want:  200,
         },
         {
             name:  "cpu.load",
             query: " select cpu_load from \"cpu.load\" WHERE time > now() - 1m",
-            want:  204,
+            want:  200,
         },
         {
             name:  "load.cpu",
@@ -206,14 +216,29 @@ func TestInfluxdbClusterQuery(t *testing.T) {
             want:  400,
         },
         {
-            name:  "show_cpu",
+            name:  "show_tag_keys",
             query: "SHOW tag keys from \"cpu\" ",
-            want:  204,
+            want:  200,
+        },
+        {
+            name:  "show_tag_values",
+            query: "SHOW tag values WITH key = \"host\"",
+            want:  200,
+        },
+        {
+            name:  "show_field_keys",
+            query: "SHOW field KEYS from \"cpu\" ",
+            want:  200,
         },
         {
             name:  "delete_cpu",
             query: " DELETE FROM \"cpu\" WHERE time < '2000-01-01T00:00:00Z'",
-            want:  400,
+            want:  200,
+        },
+        {
+            name:  "show_series",
+            query: "show series",
+            want:  200,
         },
         {
             name:  "show_measurements",
@@ -221,29 +246,40 @@ func TestInfluxdbClusterQuery(t *testing.T) {
             want:  200,
         },
         {
-            name:  "cpu.load",
-            query: " select cpu_load from \"cpu.load\" WHERE time > now() - 1m and host =~ /()$/",
-            want:  400,
+            name:  "show_retention_policies",
+            query: " SHOW retention policies limit 10",
+            want:  200,
         },
         {
-            name:  "cpu.load",
-            query: " select cpu_load from \"cpu.load\" WHERE time > now() - 1m and host =~ /^()$/",
+            name:  "cpu.load_with_host1",
+            query: " select cpu_load from \"cpu.load\" WHERE host =~ /^$/",
+            want:  200,
+        },
+        {
+            name:  "cpu.load_with_host2",
+            query: " select cpu_load from \"cpu.load\" WHERE host =~ /^()$/",
             want:  400,
         },
         {
             name:  "write.only",
-            query: " select cpu_load from write_only WHERE time > now() - 1m",
+            query: " select cpu_load from write_only",
             want:  400,
+        },
+        {
+            name:  "drop_measurement",
+            query: "DROP measurement \"cpu.load\"",
+            want:  200,
         },
     }
 
     for _, tt := range tests {
         q.Set("q", tt.query)
-        req, _ := http.NewRequest("GET", "http://localhost:8086/query?"+q.Encode(), nil)
+        req, _ := http.NewRequest("GET", "http://localhost:7076/query?"+q.Encode(), nil)
         req.URL.Query()
-        ic.Query(w, req)
+        err = ic.Query(w, req)
         if w.status != tt.want {
             t.Error(tt.name, err, w.status)
         }
+        w.buffer.Reset()
     }
 }

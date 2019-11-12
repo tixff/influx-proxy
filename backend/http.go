@@ -120,7 +120,7 @@ func (hb *HttpBackend) Ping() (version string, err error) {
 func copyHeader(dst, src http.Header) {
     for k, vv := range src {
         for _, v := range vv {
-            dst.Add(k, v)
+            dst.Set(k, v)
         }
     }
 }
