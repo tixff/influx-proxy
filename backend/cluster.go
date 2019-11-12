@@ -468,7 +468,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 
     apis, ok := ic.GetBackends(key)
     if !ok {
-        log.Printf("unknown measurement: %s,the query is %s\n", key, q)
+        log.Printf("unknown measurement: %s, the query is %s\n", key, q)
         w.WriteHeader(400)
         w.Write([]byte("unknown measurement"))
         atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)

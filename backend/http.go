@@ -145,7 +145,7 @@ func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status 
     q := strings.TrimSpace(req.FormValue("q"))
     resp, err := hb.transport.RoundTrip(req)
     if err != nil {
-        log.Printf("query error: %s,the query is %s\n", err, q)
+        log.Printf("query error: %s, the query is %s\n", err, q)
         hb.Active = false
         return
     }
@@ -163,7 +163,7 @@ func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status 
 
     body, err = ioutil.ReadAll(respBody)
     if err != nil {
-        log.Printf("read body error: %s,the query is %s\n", err, q)
+        log.Printf("read body error: %s, the query is %s\n", err, q)
         return
     }
 
@@ -190,7 +190,7 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
     q := strings.TrimSpace(req.FormValue("q"))
     resp, err := hb.transport.RoundTrip(req)
     if err != nil {
-        log.Printf("query error: %s,the query is %s\n", err, q)
+        log.Printf("query error: %s, the query is %s\n", err, q)
         hb.Active = false
         return
     }
@@ -200,7 +200,7 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
 
     p, err := ioutil.ReadAll(resp.Body)
     if err != nil {
-        log.Printf("read body error: %s,the query is %s\n", err, q)
+        log.Printf("read body error: %s, the query is %s\n", err, q)
         return
     }
 
