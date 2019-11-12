@@ -129,6 +129,49 @@ func (hb *HttpBackend) GetZone() (zone string) {
     return hb.Zone
 }
 
+func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status int, body []byte, err error) {
+    if len(req.Form) == 0 {
+        req.Form = url.Values{}
+    }
+    req.Form.Set("db", hb.DB)
+    req.ContentLength = 0
+
+    req.URL, err = url.Parse(hb.URL + "/query?" + req.Form.Encode())
+    if err != nil {
+        log.Print("internal url parse error: ", err)
+        return
+    }
+
+    q := strings.TrimSpace(req.FormValue("q"))
+    resp, err := hb.transport.RoundTrip(req)
+    if err != nil {
+        log.Printf("query error: %s,the query is %s\n", err, q)
+        hb.Active = false
+        return
+    }
+    defer resp.Body.Close()
+
+    respBody := resp.Body
+    if resp.Header.Get("Content-Encoding") == "gzip" {
+        respBody, err = gzip.NewReader(resp.Body)
+        defer respBody.Close()
+        if err != nil {
+            log.Printf("unable to decode gzip body\n")
+            return
+        }
+    }
+
+    body, err = ioutil.ReadAll(respBody)
+    if err != nil {
+        log.Printf("read body error: %s,the query is %s\n", err, q)
+        return
+    }
+
+    header = resp.Header
+    status = resp.StatusCode
+    return
+}
+
 // Don't setup Accept-Encoding: gzip. Let real client do so.
 // If real client don't support gzip and we setted, it will be a mistake.
 func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err error) {

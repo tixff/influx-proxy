@@ -97,9 +97,15 @@ The following commands are forbid.
 
 Only support match the following commands.
 
-* `.*from.*`
-* `drop measurement.*`
-* `show.*measurements`
+* `.* from .*`
+* `drop measurement`
+* `show measurements`
+* `show series`
+* `show measurements`
+* `show tag keys`
+* `show tag values`
+* `show field keys`
+* `show retention policies`
 
 License
 -------

@@ -94,7 +94,7 @@ type InfluxCluster struct {
     lock           sync.RWMutex
     Zone           string
     nexts          string
-    query_executor Querier
+    query_executor *InfluxQLExecutor
     ForbiddenQuery []*regexp.Regexp
     ObligatedQuery []*regexp.Regexp
     ExecutedQuery  []*regexp.Regexp
@@ -443,7 +443,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     if err != nil {
         err = ic.CheckClusterQuery(q)
         if err == nil {
-            err = ic.query_executor.Query(w, req)
+            err = ic.query_executor.Query(w, req, ic.backends, ic.Zone)
             if err != nil {
                 w.WriteHeader(400)
                 w.Write([]byte("query error"))
