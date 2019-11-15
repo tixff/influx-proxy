@@ -29,6 +29,9 @@ var (
 // idletimeout: keep-alives wait time
 // writetracing: enable logging for the write, default is 0
 // querytracing: enable logging for the query, default is 0
+// https-enabled: enable https, default is false
+// https-cert: the ssl certificate to use when https is enabled
+// https-key: use a separate private key location
 type NodeConfig struct {
     ListenAddr   string
     DB           string
@@ -40,6 +43,9 @@ type NodeConfig struct {
     IdleTimeout  int
     WriteTracing int
     QueryTracing int
+    HTTPSEnabled bool
+    HTTPSCert    string
+    HTTPSKey     string
 }
 
 // url: influxdb addr or other http backend which supports influxdb line protocol

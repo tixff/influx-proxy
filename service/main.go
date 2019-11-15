@@ -97,7 +97,11 @@ func main() {
     if nodecfg.IdleTimeout <= 0 {
         server.IdleTimeout = 10 * time.Second
     }
-    err = server.ListenAndServe()
+    if nodecfg.HTTPSEnabled {
+        err = server.ListenAndServeTLS(nodecfg.HTTPSCert, nodecfg.HTTPSKey)
+    } else {
+        err = server.ListenAndServe()
+    }
     if err != nil {
         log.Print(err)
         return
