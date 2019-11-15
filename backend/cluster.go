@@ -423,7 +423,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     case "GET", "POST":
     default:
         w.WriteHeader(400)
-        w.Write([]byte("illegal method"))
+        w.Write([]byte("illegal method\n"))
         atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
         return
     }
@@ -432,7 +432,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     q := strings.TrimSpace(req.FormValue("q"))
     if q == "" {
         w.WriteHeader(400)
-        w.Write([]byte("empty query"))
+        w.Write([]byte("empty query\n"))
         atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
         return
     }
@@ -444,13 +444,13 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
             err = ic.query_executor.Query(w, req, ic.backends, ic.Zone)
             if err != nil {
                 w.WriteHeader(400)
-                w.Write([]byte("query error"))
+                w.Write([]byte("query error\n"))
                 atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
             }
             return
         }
         w.WriteHeader(400)
-        w.Write([]byte("query forbidden"))
+        w.Write([]byte("query forbidden\n"))
         atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
         return
     }
@@ -459,7 +459,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     if err != nil {
         log.Printf("can't get measurement: %s\n", q)
         w.WriteHeader(400)
-        w.Write([]byte("can't get measurement"))
+        w.Write([]byte("can't get measurement\n"))
         atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
         return
     }
@@ -468,7 +468,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     if !ok {
         log.Printf("unknown measurement: %s, the query is %s\n", key, q)
         w.WriteHeader(400)
-        w.Write([]byte("unknown measurement"))
+        w.Write([]byte("unknown measurement\n"))
         atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
         return
     }
@@ -503,7 +503,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     }
 
     w.WriteHeader(400)
-    w.Write([]byte("query error"))
+    w.Write([]byte("query error\n"))
     atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
     return
 }

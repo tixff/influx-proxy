@@ -96,7 +96,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
         username, password := ParseCredentials(req)
         if username != hs.username || password != hs.password {
             w.WriteHeader(401)
-            w.Write([]byte("unable to parse authentication credentials"))
+            w.Write([]byte("unable to parse authentication credentials\n"))
             return
         }
     }
@@ -105,7 +105,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
     if hs.db != "" {
         if db != hs.db {
             w.WriteHeader(404)
-            w.Write([]byte("database not exist."))
+            w.Write([]byte("database not exist\n"))
             return
         }
     }
@@ -131,14 +131,14 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
         username, password := ParseCredentials(req)
         if username != hs.username || password != hs.password {
             w.WriteHeader(401)
-            w.Write([]byte("unable to parse authentication credentials"))
+            w.Write([]byte("unable to parse authentication credentials\n"))
             return
         }
     }
 
     if req.Method != "POST" {
         w.WriteHeader(405)
-        w.Write([]byte("method not allow."))
+        w.Write([]byte("method not allow\n"))
         return
     }
 
@@ -146,7 +146,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
     if hs.db != "" {
         if db != hs.db {
             w.WriteHeader(404)
-            w.Write([]byte("database not exist."))
+            w.Write([]byte("database not exist\n"))
             return
         }
     }
@@ -156,7 +156,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
         b, err := gzip.NewReader(req.Body)
         if err != nil {
             w.WriteHeader(400)
-            w.Write([]byte("unable to decode gzip body"))
+            w.Write([]byte("unable to decode gzip body\n"))
             return
         }
         defer b.Close()
