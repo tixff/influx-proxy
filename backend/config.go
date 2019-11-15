@@ -40,6 +40,8 @@ type NodeConfig struct {
 
 // url: influxdb addr or other http backend which supports influxdb line protocol
 // db: influxdb db
+// username: influxdb username
+// password: influxdb password
 // zone: same zone first query
 // interval: default config is 1000ms, wait 1 second write whether point count has bigger than maxrowlimit config
 // timeout: default config is 10000ms, write timeout until 10 seconds
@@ -51,6 +53,8 @@ type NodeConfig struct {
 type BackendConfig struct {
     URL             string
     DB              string
+    Username        string
+    Password        string
     Zone            string
     Interval        int
     Timeout         int
@@ -105,6 +109,8 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
         cfg := &BackendConfig{
             URL: val.URL,
             DB: val.DB,
+            Username: val.Username,
+            Password: val.Password,
             Zone: val.Zone,
             Interval: val.Interval,
             Timeout: val.Timeout,

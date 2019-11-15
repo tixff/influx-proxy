@@ -44,6 +44,8 @@ type HttpBackend struct {
     Interval  int
     URL       string
     DB        string
+    Username  string
+    Password  string
     Zone      string
     Active    bool
     running   bool
@@ -62,6 +64,8 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
         Interval:  cfg.CheckInterval,
         URL:       cfg.URL,
         DB:        cfg.DB,
+        Username:  cfg.Username,
+        Password:  cfg.Password,
         Zone:      cfg.Zone,
         Active:    true,
         running:   true,
@@ -135,6 +139,10 @@ func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status 
     }
     req.Form.Set("db", hb.DB)
     req.ContentLength = 0
+    if hb.Username != "" {
+        req.Form.Set("u", hb.Username)
+        req.Form.Set("p", hb.Password)
+    }
 
     req.URL, err = url.Parse(hb.URL + "/query?" + req.Form.Encode())
     if err != nil {
@@ -180,6 +188,10 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
     }
     req.Form.Set("db", hb.DB)
     req.ContentLength = 0
+    if hb.Username != "" {
+        req.Form.Set("u", hb.Username)
+        req.Form.Set("p", hb.Password)
+    }
 
     req.URL, err = url.Parse(hb.URL + "/query?" + req.Form.Encode())
     if err != nil {
@@ -231,6 +243,10 @@ func (hb *HttpBackend) WriteCompressed(p []byte) (err error) {
 func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error) {
     q := url.Values{}
     q.Set("db", hb.DB)
+    if hb.Username != "" {
+        q.Set("u", hb.Username)
+        q.Set("p", hb.Password)
+    }
 
     req, err := http.NewRequest("POST", hb.URL+"/write?"+q.Encode(), stream)
     if compressed {

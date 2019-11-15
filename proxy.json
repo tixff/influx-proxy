@@ -3,6 +3,8 @@
         "influxdb-1": {
             "url": "http://influxdb-1:8086",
             "db": "test",
+            "username": "",
+            "password": "",
             "zone": "local",
             "interval": 1000,
             "timeout": 10000,
@@ -14,6 +16,8 @@
         "influxdb-2": {
             "url": "http://influxdb-2:8086",
             "db": "test",
+            "username": "",
+            "password": "",
             "zone": "local",
             "interval": 1000,
             "timeout": 10000,
