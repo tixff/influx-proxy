@@ -19,18 +19,16 @@ import (
 var (
     ErrConfig   = errors.New("config parse error")
     ConfigFile  string
-    NodeName    string
-    LogPath     string
     DataDir     string
+    LogPath     string
 )
 
 func init() {
     log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 
     flag.StringVar(&ConfigFile, "config", "proxy.json", "proxy config file")
-    flag.StringVar(&NodeName, "node", "l1", "node name")
-    flag.StringVar(&LogPath, "log-path", "proxy.log", "log file path")
     flag.StringVar(&DataDir, "data-dir", "data", "data dir to save .dat .rec")
+    flag.StringVar(&LogPath, "log-path", "proxy.log", "log file path")
     flag.Parse()
 }
 
@@ -74,7 +72,7 @@ func main() {
         }
     }
 
-    fcs := backend.NewFileConfigSource(ConfigFile, NodeName)
+    fcs := backend.NewFileConfigSource(ConfigFile)
 
     nodecfg, err := fcs.LoadNode()
     if err != nil {

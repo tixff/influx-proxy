@@ -79,23 +79,18 @@ type BackendConfig struct {
 // measurement:[backends keys], the key must be in the BACKENDS
 // data with the measurement will write to the backends
 
-// BACKENDS, KEYMAPS, NODES, DEFAULT_NODE
+// BACKENDS, KEYMAPS, NODE
 type FileConfigSource struct {
-    node         string
     BACKENDS     map[string]BackendConfig
     KEYMAPS      map[string][]string
-    NODES        map[string]NodeConfig
-    DEFAULT_NODE NodeConfig
+    NODE         NodeConfig
 }
 
-func NewFileConfigSource(cfgfile string, node string) (fcs *FileConfigSource) {
-    fcs = &FileConfigSource{
-        node: node,
-    }
-
+func NewFileConfigSource(cfgfile string) (fcs *FileConfigSource) {
+    fcs = &FileConfigSource{}
     file, err := os.Open(cfgfile)
     if err != nil {
-        log.Printf("file load error: %s", fcs.node)
+        log.Printf("file load error.")
         return
     }
     defer file.Close()
@@ -105,9 +100,9 @@ func NewFileConfigSource(cfgfile string, node string) (fcs *FileConfigSource) {
 }
 
 func (fcs *FileConfigSource) LoadNode() (nodecfg NodeConfig, err error) {
-    nodecfg = fcs.NODES[fcs.node]
+    nodecfg = fcs.NODE
     if nodecfg.ListenAddr == "" {
-        nodecfg.ListenAddr = fcs.DEFAULT_NODE.ListenAddr
+        nodecfg.ListenAddr = ":7076"
     }
     log.Printf("node config loaded.")
     return
