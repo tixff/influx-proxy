@@ -36,6 +36,8 @@
         "l1": {
             "listenaddr": ":7076",
             "db": "test",
+            "username": "",
+            "password": "",
             "zone": "local",
             "interval": 10,
             "idletimeout": 10,

@@ -17,16 +17,37 @@ import (
 
 type HttpService struct {
     db string
+    username string
+    password string
     ic *backend.InfluxCluster
 }
 
-func NewHttpService(ic *backend.InfluxCluster, db string) (hs *HttpService) {
+func NewHttpService(ic *backend.InfluxCluster, db string, username string, password string) (hs *HttpService) {
     hs = &HttpService{
         db: db,
+        username: username,
+        password: password,
         ic: ic,
     }
     if hs.db != "" {
         log.Print("http database: ", hs.db)
+    }
+    return
+}
+
+func ParseCredentials(req *http.Request) (username string, password string) {
+    q := req.URL.Query()
+    // Check for username and password in URL params.
+    if u, p := q.Get("u"), q.Get("p"); u != "" && p != "" {
+        username = u
+        password = p
+        return
+    }
+    // Check for the HTTP Authorization header.
+    if u, p, ok := req.BasicAuth(); ok {
+        username = u
+        password = p
+        return
     }
     return
 }
@@ -71,6 +92,15 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
     defer req.Body.Close()
     w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
+    if hs.username != "" {
+        username, password := ParseCredentials(req)
+        if username != hs.username || password != hs.password {
+            w.WriteHeader(401)
+            w.Write([]byte("unable to parse authentication credentials"))
+            return
+        }
+    }
+
     db := req.FormValue("db")
     if hs.db != "" {
         if db != hs.db {
@@ -97,6 +127,15 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
     defer req.Body.Close()
     w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
+    if hs.username != "" {
+        username, password := ParseCredentials(req)
+        if username != hs.username || password != hs.password {
+            w.WriteHeader(401)
+            w.Write([]byte("unable to parse authentication credentials"))
+            return
+        }
+    }
+
     if req.Method != "POST" {
         w.WriteHeader(405)
         w.Write([]byte("method not allow."))
@@ -104,7 +143,6 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
     }
 
     db := req.URL.Query().Get("db")
-
     if hs.db != "" {
         if db != hs.db {
             w.WriteHeader(404)

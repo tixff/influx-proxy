@@ -86,7 +86,7 @@ func main() {
     ic.LoadConfig()
 
     mux := http.NewServeMux()
-    NewHttpService(ic, nodecfg.DB).Register(mux)
+    NewHttpService(ic, nodecfg.DB, nodecfg.Username, nodecfg.Password).Register(mux)
 
     log.Printf("http service start.")
     server := &http.Server{

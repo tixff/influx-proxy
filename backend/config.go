@@ -21,6 +21,8 @@ var (
 
 // listenaddr: proxy listen addr
 // db: proxy db, client's db must be same with it
+// username: proxy username
+// password: proxy password
 // zone: use for query
 // nexts: the backends keys, will accept all data, split with ','
 // interval: collect Statistics
@@ -30,6 +32,8 @@ var (
 type NodeConfig struct {
     ListenAddr   string
     DB           string
+    Username     string
+    Password     string
     Zone         string
     Nexts        string
     Interval     int
