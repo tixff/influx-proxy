@@ -7,6 +7,7 @@ package backend
 import (
     "bytes"
     "compress/gzip"
+    "crypto/tls"
     "errors"
     "io"
     "io/ioutil"
@@ -40,7 +41,7 @@ func Compress(buf *bytes.Buffer, p []byte) (err error) {
 
 type HttpBackend struct {
     client    *http.Client
-    transport http.Transport
+    transport *http.Transport
     Interval  int
     URL       string
     DB        string
@@ -55,7 +56,13 @@ type HttpBackend struct {
 func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
     hb = &HttpBackend{
         client: &http.Client{
+            Transport: &http.Transport{
+                TLSClientConfig: &tls.Config{InsecureSkipVerify: strings.HasPrefix(cfg.URL, "https")},
+            },
             Timeout: time.Millisecond * time.Duration(cfg.Timeout),
+        },
+        transport: &http.Transport{
+            TLSClientConfig: &tls.Config{InsecureSkipVerify: strings.HasPrefix(cfg.URL, "https")},
         },
         // TODO: query timeout? use req.Cancel
         // client_query: &http.Client{
