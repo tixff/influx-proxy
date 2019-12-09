@@ -7,6 +7,7 @@ package main
 import (
     "errors"
     "flag"
+    "fmt"
     "log"
     "net/http"
     "os"
@@ -21,6 +22,11 @@ var (
     ConfigFile  string
     DataDir     string
     LogPath     string
+    Version     bool
+
+    GitCommit   string
+    GoVersion   string
+    BuildTime   string
 )
 
 func init() {
@@ -28,7 +34,8 @@ func init() {
 
     flag.StringVar(&ConfigFile, "config", "proxy.json", "proxy config file")
     flag.StringVar(&DataDir, "data-dir", "data", "data dir to save .dat .rec")
-    flag.StringVar(&LogPath, "log-path", "proxy.log", "log file path")
+    flag.StringVar(&LogPath, "log-path", "", "log file path (default \"\")")
+    flag.BoolVar(&Version, "version", false, "proxy version")
     flag.Parse()
 }
 
@@ -57,6 +64,14 @@ func pathExists(path string) (bool, error) {
 }
 
 func main() {
+    if Version {
+        fmt.Printf("Version:    %s\n", backend.VERSION)
+        fmt.Printf("Git commit: %s\n", GitCommit)
+        fmt.Printf("Go version: %s\n", GoVersion)
+        fmt.Printf("Build time: %s\n", BuildTime)
+        return
+    }
+
     initLog()
 
     exist, err := pathExists(DataDir)

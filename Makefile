@@ -11,7 +11,7 @@ all: build
 
 build:
 	mkdir -p bin
-	go build -o bin/influx-proxy github.com/chengshiwen/influx-proxy/service
+	go build -o bin/influx-proxy -ldflags "-X main.GitCommit=$(shell git rev-parse HEAD | cut -c 1-7) -X 'main.GoVersion=$(shell go version | cut -d ' ' -f 3-)' -X 'main.BuildTime=$(shell date '+%Y-%m-%d %H:%M:%S')'" github.com/chengshiwen/influx-proxy/service
 
 test:
 	rm -rf data/test
@@ -24,7 +24,7 @@ bench:
 	go test -bench=. github.com/chengshiwen/influx-proxy/backend
 
 run: build
-	bin/influx-proxy -config proxy.json -log-path ""
+	bin/influx-proxy -config proxy.json
 
 clean:
 	rm -rf bin data
