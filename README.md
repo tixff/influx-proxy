@@ -34,7 +34,6 @@ Usage
 ```sh
 $ # Install influx-proxy to your $GOPATH/bin
 $ go get -u github.com/chengshiwen/influx-proxy/service
-$ go install github.com/chengshiwen/influx-proxy/service
 $ mv $GOPATH/bin/service $GOPATH/bin/influx-proxy
 $ # Start influx-proxy!
 $ $GOPATH/bin/influx-proxy -config proxy.json
