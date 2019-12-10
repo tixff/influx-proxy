@@ -30,6 +30,8 @@ var (
     ErrNotClusterQuery = errors.New("not a cluster query")
 )
 
+var StatisticsMetricName = "influxdb.cluster.statistics"
+
 func ScanKey(pointbuf []byte) (key string, err error) {
     var keybuf [100]byte
     keyslice := keybuf[0:0]
@@ -196,7 +198,7 @@ func (ic *InfluxCluster) Flush() {
 
 func (ic *InfluxCluster) WriteStatistics() (err error) {
     metric := &monitor.Metric{
-        Name: "influxdb.cluster.statistics",
+        Name: StatisticsMetricName,
         Tags: ic.defaultTags,
         Fields: map[string]interface{}{
             "statQueryRequest":         ic.counter.QueryRequests,

@@ -137,7 +137,7 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte) (rbody []byte, err 
         } else {
             for _, value := range series[0].Values {
                 key := value[0].(string)
-                if !strings.HasPrefix(key, "influxdb.cluster.statistics") {
+                if !strings.HasPrefix(key, StatisticsMetricName) {
                     valuesMap[key] = value
                 }
             }
@@ -161,7 +161,7 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte) (rbody []byte, err 
             return
         }
         for _, serie := range _series {
-            if serie.Name != "influxdb.cluster.statistics" {
+            if serie.Name != StatisticsMetricName {
                 seriesMap[serie.Name] = serie
             }
         }
