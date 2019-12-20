@@ -464,8 +464,9 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
         if err == nil {
             err = ic.query_executor.Query(w, req, ic.backends, ic.Zone)
             if err != nil {
+                log.Print("query executor error: ", err)
                 w.WriteHeader(400)
-                w.Write([]byte("query error\n"))
+                w.Write([]byte("query executor error\n"))
                 atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
             }
             return
@@ -524,7 +525,12 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     }
 
     w.WriteHeader(400)
-    w.Write([]byte("query error\n"))
+    if err == nil {
+        w.Write([]byte("backends not active\n"))
+    } else {
+        log.Print("query error: ", err)
+        w.Write([]byte("query error\n"))
+    }
     atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
     return
 }
