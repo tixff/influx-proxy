@@ -65,14 +65,33 @@ func BytesToInt64(buf []byte) int64 {
     return res
 }
 
+func ScanTime(buf []byte) (bool, int) {
+    i := len(buf) - 1
+    for ; i >= 0; i-- {
+        if buf[i] < '0' || buf[i] > '9' {
+            break
+        }
+    }
+    return i > 0 && i < len(buf) - 1 && (buf[i] == ' ' || buf[i] == '\t' || buf[i] == 0), i
+}
+
 func LineToNano(line []byte, precision string) []byte {
-    items := bytes.Split(line, []byte(" "))
-    length := len(items)
-    if length == 3 && precision != "ns" {
-        mul := models.GetPrecisionMultiplier(precision)
-        nano := BytesToInt64(items[2]) * mul
-        items[2] = Int64ToBytes(nano)
-        return bytes.Join(items, []byte(" "))
+    line = bytes.TrimRight(line, " \t\r\n")
+    if precision != "ns" {
+        if found, pos := ScanTime(line); found {
+            if precision == "u" {
+                return append(line, []byte("000")...)
+            } else if precision == "ms" {
+                return append(line, []byte("000000")...)
+            } else if precision == "s" {
+                return append(line, []byte("000000000")...)
+            } else {
+                mul := models.GetPrecisionMultiplier(precision)
+                nano := BytesToInt64(line[pos+1:]) * mul
+                bytenano := Int64ToBytes(nano)
+                return bytes.Join([][]byte{line[:pos], bytenano}, []byte(" "))
+            }
+        }
     }
     return line
 }
@@ -570,7 +589,7 @@ func (ic *InfluxCluster) Write(p []byte, precision string) (err error) {
             break
         }
 
-        line = LineToNano(bytes.TrimRight(line, " \t\r\n"), precision)
+        line = LineToNano(line, precision)
         ic.WriteRow(line)
     }
 
