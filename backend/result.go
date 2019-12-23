@@ -131,3 +131,18 @@ func ResultSetBytesFromSeries(series []*models.Row) (b []byte, err error) {
     }
     return
 }
+
+func ResultSetBytesFromSeriesAndError(series []*models.Row, e error) (b []byte, err error) {
+    r := Result{
+        Series: series,
+        Err: e,
+    }
+    rs := &ResultSet{
+        Results: []Result{r},
+    }
+    b, err = rs.MarshalJSON()
+    if err == nil {
+        b = append(b, '\n')
+    }
+    return
+}

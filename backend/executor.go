@@ -9,6 +9,7 @@ import (
     "bytes"
     "compress/gzip"
     "errors"
+    "fmt"
     "io"
     "net/http"
     "regexp"
@@ -46,11 +47,13 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, bac
     var header http.Header
     var status int
     var bodies [][]byte
+    var inactive int
     for _, api := range backends {
-        if api.GetZone() != zone {
+        if api.GetZone() != zone || api.IsWriteOnly() {
             continue
         }
-        if !api.IsActive() || api.IsWriteOnly() {
+        if !api.IsActive() {
+            inactive++
             continue
         }
         _header, _status, _body, _err := api.QueryResp(req)
@@ -70,17 +73,24 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, bac
     }
 
     var rbody []byte
-    var _err error
-    q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
-    if matched, _ := regexp.MatchString("^show\\s+retention\\s+policies", q); matched {
-        rbody, _err = iqe.concatByValues(bodies)
-    } else if matched, _ := regexp.MatchString("^show\\s+series|^show\\s+measurements", q); matched {
-        rbody, _err = iqe.reduceByValues(bodies)
-    } else if matched, _ := regexp.MatchString("^show\\s+tag\\s+keys|^show\\s+tag\\s+values|^show\\s+field\\s+keys", q); matched {
-        rbody, _err = iqe.reduceBySeries(bodies)
+    var rerr error
+    if inactive > 0 {
+        rerr = errors.New(fmt.Sprintf("%d/%d backends not active", inactive, inactive + len(bodies)))
     }
-    if _err != nil {
-        err = _err
+    if len(bodies) == 0 {
+        rbody, err = ResultSetBytesFromSeriesAndError(nil, rerr)
+        status = http.StatusOK
+    } else {
+        q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
+        if matched, _ := regexp.MatchString("^show\\s+retention\\s+policies", q); matched {
+            rbody, err = iqe.concatByValues(bodies, rerr)
+        } else if matched, _ := regexp.MatchString("^show\\s+series|^show\\s+measurements", q); matched {
+            rbody, err = iqe.reduceByValues(bodies, rerr)
+        } else if matched, _ := regexp.MatchString("^show\\s+tag\\s+keys|^show\\s+tag\\s+values|^show\\s+field\\s+keys", q); matched {
+            rbody, err = iqe.reduceBySeries(bodies, rerr)
+        }
+    }
+    if err != nil {
         return
     }
 
@@ -100,7 +110,7 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, bac
     return
 }
 
-func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rbody []byte, err error) {
+func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte, rerr error) (rbody []byte, err error) {
     var series []*models.Row
     var values [][]interface{}
     for _, body := range bodies {
@@ -118,11 +128,11 @@ func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rbody []byte, err 
         }
     }
     series[0].Values = values
-    rbody, err = ResultSetBytesFromSeries(series)
+    rbody, err = ResultSetBytesFromSeriesAndError(series, rerr)
     return
 }
 
-func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte) (rbody []byte, err error) {
+func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte, rerr error) (rbody []byte, err error) {
     var series []*models.Row
     var values [][]interface{}
     valuesMap := make(map[string][]interface{})
@@ -147,11 +157,11 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte) (rbody []byte, err 
         values = append(values, value)
     }
     series[0].Values = values
-    rbody, err = ResultSetBytesFromSeries(series)
+    rbody, err = ResultSetBytesFromSeriesAndError(series, rerr)
     return
 }
 
-func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte) (rbody []byte, err error) {
+func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte, rerr error) (rbody []byte, err error) {
     var series []*models.Row
     seriesMap := make(map[string]*models.Row)
     for _, body := range bodies {
@@ -169,6 +179,6 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte) (rbody []byte, err 
     for _, serie := range seriesMap {
         series = append(series, serie)
     }
-    rbody, err = ResultSetBytesFromSeries(series)
+    rbody, err = ResultSetBytesFromSeriesAndError(series, rerr)
     return
 }
