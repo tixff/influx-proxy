@@ -29,9 +29,9 @@ var (
 // idletimeout: keep-alives wait time
 // writetracing: enable logging for the write, default is 0
 // querytracing: enable logging for the query, default is 0
-// https-enabled: enable https, default is false
-// https-cert: the ssl certificate to use when https is enabled
-// https-key: use a separate private key location
+// httpsenabled: enable https, default is false
+// httpscert: the ssl certificate to use when https is enabled
+// httpskey: use a separate private key location
 type NodeConfig struct {
     ListenAddr   string
     DB           string
@@ -76,8 +76,16 @@ type BackendConfig struct {
 }
 
 // KEYMAPS
-// measurement:[backends keys], the key must be in the BACKENDS
-// data with the measurement will write to the backends
+// measurement: [BACKENDS keys], the key must be in the BACKENDS
+// http request with the measurement matching the following principles will be forwarded to the backends
+// exact match first:
+//      for instance, we use cpu.load for measurement's name
+//      The KEYMAPS has cpu and cpu.load keys, it will use the cpu.load corresponding backends
+// prefix match then:
+//      for instance, we use cpu.load for measurement's name
+//      the KEYMAPS only has cpu key, it will use the cpu corresponding backends
+// _default_ match finally:
+//      if the measurement don't match the above principles, it will use the _default_ corresponding backends
 
 // BACKENDS, KEYMAPS, NODE
 type FileConfigSource struct {
