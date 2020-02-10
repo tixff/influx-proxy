@@ -11,6 +11,7 @@ import (
     "log"
     "net/http"
     "os"
+    "runtime"
     "time"
 
     "github.com/chengshiwen/influx-proxy/backend"
@@ -25,7 +26,6 @@ var (
     Version     bool
 
     GitCommit   string
-    GoVersion   string
     BuildTime   string
 )
 
@@ -67,8 +67,9 @@ func main() {
     if Version {
         fmt.Printf("Version:    %s\n", backend.VERSION)
         fmt.Printf("Git commit: %s\n", GitCommit)
-        fmt.Printf("Go version: %s\n", GoVersion)
+        fmt.Printf("Go version: %s\n", runtime.Version())
         fmt.Printf("Build time: %s\n", BuildTime)
+        fmt.Printf("OS/Arch:    %s/%s\n", runtime.GOOS, runtime.GOARCH)
         return
     }
 
