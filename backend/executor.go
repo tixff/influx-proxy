@@ -18,10 +18,6 @@ import (
     "github.com/influxdata/influxdb1-client/models"
 )
 
-var (
-    ErrNotOneSeries = errors.New("not one series error")
-)
-
 type InfluxQLExecutor struct {
 }
 
@@ -114,20 +110,21 @@ func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte, rerr error) (rbody 
     var series []*models.Row
     var values [][]interface{}
     for _, body := range bodies {
-        series, err = SeriesFromResultSetBytes(body)
-        if err != nil {
+        _series, _err := SeriesFromResultSetBytes(body)
+        if _err != nil {
+            err = _err
             return
         }
-        if len(series) != 1 {
-            err = ErrNotOneSeries
-            return
-        } else {
-            for _, value := range series[0].Values {
+        if len(_series) == 1 {
+            series = _series
+            for _, value := range _series[0].Values {
                 values = append(values, value)
             }
         }
     }
-    series[0].Values = values
+    if len(series) == 1 {
+        series[0].Values = values
+    }
     rbody, err = ResultSetBytesFromSeriesAndError(series, rerr)
     return
 }
@@ -137,15 +134,14 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte, rerr error) (rbody 
     var values [][]interface{}
     valuesMap := make(map[string][]interface{})
     for _, body := range bodies {
-        series, err = SeriesFromResultSetBytes(body)
-        if err != nil {
+        _series, _err := SeriesFromResultSetBytes(body)
+        if _err != nil {
+            err = _err
             return
         }
-        if len(series) != 1 {
-            err = ErrNotOneSeries
-            return
-        } else {
-            for _, value := range series[0].Values {
+        if len(_series) == 1 {
+            series = _series
+            for _, value := range _series[0].Values {
                 key := value[0].(string)
                 if !strings.HasPrefix(key, StatisticsMetricName) {
                     valuesMap[key] = value
@@ -153,10 +149,12 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte, rerr error) (rbody 
             }
         }
     }
-    for _, value := range valuesMap {
-        values = append(values, value)
+    if len(series) == 1 {
+        for _, value := range valuesMap {
+            values = append(values, value)
+        }
+        series[0].Values = values
     }
-    series[0].Values = values
     rbody, err = ResultSetBytesFromSeriesAndError(series, rerr)
     return
 }
