@@ -22,11 +22,11 @@ type HttpService struct {
     ic *backend.InfluxCluster
 }
 
-func NewHttpService(ic *backend.InfluxCluster, db string, username string, password string) (hs *HttpService) {
+func NewHttpService(ic *backend.InfluxCluster, nodecfg *backend.NodeConfig) (hs *HttpService) {
     hs = &HttpService{
-        db: db,
-        username: username,
-        password: password,
+        db: nodecfg.DB,
+        username: nodecfg.Username,
+        password: nodecfg.Password,
         ic: ic,
     }
     if hs.db != "" {
