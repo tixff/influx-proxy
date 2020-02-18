@@ -96,8 +96,6 @@ func CreateTestInfluxCluster() (ic *InfluxCluster, err error) {
         }
     }
     ic.backends = backends
-    ic.nexts = "test2"
-    ic.bas = append(ic.bas, backends["test2"])
     m2bs := make(map[string][]BackendAPI)
     m2bs["cpu"] = append(m2bs["cpu"], backends["write_only"], backends["test1"])
     m2bs["write_only"] = append(m2bs["write_only"], backends["write_only"])

@@ -112,13 +112,11 @@ func TrimRight(p []byte, s []byte) (r []byte) {
 type InfluxCluster struct {
     lock           sync.RWMutex
     Zone           string
-    nexts          string
     query_executor *InfluxQLExecutor
     ForbiddenQuery []*regexp.Regexp
     ObligatedQuery []*regexp.Regexp
     ExecutedQuery  []*regexp.Regexp
     cfgsrc         *FileConfigSource
-    bas            []BackendAPI // nexts: the backends keys, will accept all data, split with ','
     backends       map[string]BackendAPI
     m2bs           map[string][]BackendAPI // measurements to backends
     stats          *Statistics
@@ -146,10 +144,8 @@ type Statistics struct {
 func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig, datadir string) (ic *InfluxCluster) {
     ic = &InfluxCluster{
         Zone:           nodecfg.Zone,
-        nexts:          nodecfg.Nexts,
         query_executor: &InfluxQLExecutor{},
         cfgsrc:         cfgsrc,
-        bas:            make([]BackendAPI, 0),
         stats:          &Statistics{},
         counter:        &Statistics{},
         ticker:         time.NewTicker(10 * time.Second),
@@ -276,14 +272,7 @@ func (ic *InfluxCluster) ExecuteQuery(s string) (err error) {
     return
 }
 
-func (ic *InfluxCluster) AddNext(ba BackendAPI) {
-    ic.lock.Lock()
-    defer ic.lock.Unlock()
-    ic.bas = append(ic.bas, ba)
-    return
-}
-
-func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, bas []BackendAPI, err error) {
+func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, err error) {
     backends = make(map[string]BackendAPI)
 
     bkcfgs, err := ic.cfgsrc.LoadBackends()
@@ -296,18 +285,6 @@ func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, bas []B
         if err != nil {
             log.Printf("create backend error: %s", err)
             return
-        }
-    }
-
-    if ic.nexts != "" {
-        for _, nextname := range strings.Split(ic.nexts, ",") {
-            ba, ok := backends[nextname]
-            if !ok {
-                err = ErrBackendNotExist
-                log.Println(nextname, err)
-                continue
-            }
-            bas = append(bas, ba)
         }
     }
 
@@ -339,7 +316,7 @@ func (ic *InfluxCluster) loadMeasurements(backends map[string]BackendAPI) (m2bs 
 }
 
 func (ic *InfluxCluster) LoadConfig() (err error) {
-    backends, bas, err := ic.loadBackends()
+    backends, err := ic.loadBackends()
     if err != nil {
         return
     }
@@ -352,7 +329,6 @@ func (ic *InfluxCluster) LoadConfig() (err error) {
     ic.lock.Lock()
     orig_backends := ic.backends
     ic.backends = backends
-    ic.bas = bas
     ic.m2bs = m2bs
     ic.lock.Unlock()
 
@@ -597,19 +573,6 @@ func (ic *InfluxCluster) Write(p []byte, precision string) (err error) {
 
         line = LineToNano(line, precision)
         ic.WriteRow(line)
-    }
-
-    // FIXME: precision problem when len(ic.bas) > 0
-    ic.lock.RLock()
-    defer ic.lock.RUnlock()
-    if len(ic.bas) > 0 {
-        for _, n := range ic.bas {
-            err = n.Write(p)
-            if err != nil {
-                log.Printf("error: %s\n", err)
-                atomic.AddInt64(&ic.stats.WriteRequestsFail, 1)
-            }
-        }
     }
 
     return

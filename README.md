@@ -130,7 +130,6 @@ The configurations in `proxy.json` are the following:
 * `username`: proxy username
 * `password`: proxy password
 * `zone`: use for query
-* `nexts`: the backends keys, will accept all data, split with ','
 * `interval`: collect Statistics
 * `idletimeout`: keep-alives wait time
 * `writetracing`: enable logging for the write, default is 0
