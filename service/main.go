@@ -88,13 +88,12 @@ func main() {
         }
     }
 
-    fcs := backend.NewFileConfigSource(ConfigFile)
-
-    nodecfg, err := fcs.LoadNode()
+    fcs, err := backend.NewFileConfigSource(ConfigFile)
     if err != nil {
         log.Printf("config source load failed.")
         return
     }
+    nodecfg := fcs.LoadNode()
 
     ic := backend.NewInfluxCluster(fcs, &nodecfg, DataDir)
     ic.LoadConfig()

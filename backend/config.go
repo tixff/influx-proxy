@@ -94,11 +94,10 @@ type FileConfigSource struct {
     NODE         NodeConfig
 }
 
-func NewFileConfigSource(cfgfile string) (fcs *FileConfigSource) {
+func NewFileConfigSource(cfgfile string) (fcs *FileConfigSource, err error) {
     fcs = &FileConfigSource{}
     file, err := os.Open(cfgfile)
     if err != nil {
-        log.Printf("file load error.")
         return
     }
     defer file.Close()
@@ -107,7 +106,7 @@ func NewFileConfigSource(cfgfile string) (fcs *FileConfigSource) {
     return
 }
 
-func (fcs *FileConfigSource) LoadNode() (nodecfg NodeConfig, err error) {
+func (fcs *FileConfigSource) LoadNode() (nodecfg NodeConfig) {
     nodecfg = fcs.NODE
     if nodecfg.ListenAddr == "" {
         nodecfg.ListenAddr = ":7076"
