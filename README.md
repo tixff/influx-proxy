@@ -108,7 +108,6 @@ The configurations in `proxy.json` are the following:
 * `db`: influxdb db
 * `username`: influxdb username
 * `password`: influxdb password
-* `zone`: same zone first query
 * `interval`: default config is 1000ms, wait 1 second write whether point count has bigger than maxrowlimit config
 * `timeout`: default config is 10000ms, write timeout until 10 seconds
 * `timeoutquery`: default config is 600000ms, query timeout until 600 seconds
@@ -129,7 +128,6 @@ The configurations in `proxy.json` are the following:
 * `db`: proxy db, client's db must be same with it
 * `username`: proxy username
 * `password`: proxy password
-* `zone`: use for query
 * `interval`: collect Statistics
 * `idletimeout`: keep-alives wait time
 * `writetracing`: enable logging for the write, default is 0

@@ -47,7 +47,6 @@ type HttpBackend struct {
     DB        string
     Username  string
     Password  string
-    Zone      string
     Active    bool
     running   bool
     WriteOnly int
@@ -73,7 +72,6 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
         DB:        cfg.DB,
         Username:  cfg.Username,
         Password:  cfg.Password,
-        Zone:      cfg.Zone,
         Active:    true,
         running:   true,
         WriteOnly: cfg.WriteOnly,
@@ -134,10 +132,6 @@ func copyHeader(dst, src http.Header) {
             dst.Set(k, v)
         }
     }
-}
-
-func (hb *HttpBackend) GetZone() (zone string) {
-    return hb.Zone
 }
 
 func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status int, body []byte, err error) {

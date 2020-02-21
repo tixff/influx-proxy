@@ -15,7 +15,6 @@ type BackendAPI interface {
     IsActive() (b bool)
     IsWriteOnly() (b bool)
     Ping() (version string, err error)
-    GetZone() (zone string)
     Write(p []byte) (err error)
     Close() (err error)
     QueryResp(req *http.Request) (header http.Header, status int, body []byte, err error)

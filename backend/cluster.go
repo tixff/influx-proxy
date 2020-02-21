@@ -111,7 +111,6 @@ func TrimRight(p []byte, s []byte) (r []byte) {
 
 type InfluxCluster struct {
     lock           sync.RWMutex
-    Zone           string
     query_executor *InfluxQLExecutor
     ForbiddenQuery []*regexp.Regexp
     ObligatedQuery []*regexp.Regexp
@@ -143,7 +142,6 @@ type Statistics struct {
 
 func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig, datadir string) (ic *InfluxCluster) {
     ic = &InfluxCluster{
-        Zone:           nodecfg.Zone,
         query_executor: &InfluxQLExecutor{},
         cfgsrc:         cfgsrc,
         stats:          &Statistics{},
@@ -438,7 +436,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     if err != nil {
         err = ic.CheckClusterQuery(q)
         if err == nil {
-            err = ic.query_executor.Query(w, req, ic.backends, ic.Zone)
+            err = ic.query_executor.Query(w, req, ic.backends)
             if err != nil {
                 log.Print("query executor error: ", err)
                 w.WriteHeader(400)
@@ -471,27 +469,9 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
         return
     }
 
-    // same zone first, other zone. pass non-active.
-    // TODO: better way?
-
+    // pass non-active and write-only.
     for _, api := range apis {
-        if api.GetZone() != ic.Zone {
-            continue
-        }
         if !api.IsActive() || api.IsWriteOnly() {
-            continue
-        }
-        err = api.Query(w, req)
-        if err == nil {
-            return
-        }
-    }
-
-    for _, api := range apis {
-        if api.GetZone() == ic.Zone {
-            continue
-        }
-        if !api.IsActive() {
             continue
         }
         err = api.Query(w, req)

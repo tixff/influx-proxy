@@ -37,7 +37,7 @@ func GzipCompress(b []byte) (cb []byte, err error) {
     return
 }
 
-func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, backends map[string]BackendAPI, zone string) (err error) {
+func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, backends map[string]BackendAPI) (err error) {
     // remove support of query parameter `chunked`
     req.Form.Del("chunked")
     var header http.Header
@@ -45,7 +45,7 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, bac
     var bodies [][]byte
     var inactive int
     for _, api := range backends {
-        if api.GetZone() != zone || api.IsWriteOnly() {
+        if api.IsWriteOnly() {
             continue
         }
         if !api.IsActive() {

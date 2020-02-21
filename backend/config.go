@@ -12,7 +12,7 @@ import (
 )
 
 const (
-    VERSION = "1.2.2"
+    VERSION = "1.2.3"
 )
 
 var (
@@ -23,7 +23,6 @@ var (
 // db: proxy db, client's db must be same with it
 // username: proxy username
 // password: proxy password
-// zone: use for query
 // interval: collect Statistics
 // idletimeout: keep-alives wait time
 // writetracing: enable logging for the write, default is 0
@@ -36,7 +35,6 @@ type NodeConfig struct {
     DB           string
     Username     string
     Password     string
-    Zone         string
     Interval     int
     IdleTimeout  int
     WriteTracing int
@@ -50,7 +48,6 @@ type NodeConfig struct {
 // db: influxdb db
 // username: influxdb username
 // password: influxdb password
-// zone: same zone first query
 // interval: default config is 1000ms, wait 1 second write whether point count has bigger than maxrowlimit config
 // timeout: default config is 10000ms, write timeout until 10 seconds
 // timeoutquery: default config is 600000ms, query timeout until 600 seconds
@@ -63,7 +60,6 @@ type BackendConfig struct {
     DB              string
     Username        string
     Password        string
-    Zone            string
     Interval        int
     Timeout         int
     TimeoutQuery    int
@@ -121,7 +117,6 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
             DB: val.DB,
             Username: val.Username,
             Password: val.Password,
-            Zone: val.Zone,
             Interval: val.Interval,
             Timeout: val.Timeout,
             TimeoutQuery: val.TimeoutQuery,
