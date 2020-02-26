@@ -7,5 +7,5 @@ package backend
 var (
     ForbidCmds   = "(?i:^\\s*grant|^\\s*revoke|\\(\\)\\$)"
     SupportCmds  = "(?i:from|drop\\s+measurement)"
-    ExecutorCmds = "(?i:show\\s+series|show\\s+measurements|show\\s+tag\\s+keys|show\\s+tag\\s+values|show\\s+field\\s+keys|show\\s+retention\\s+policies)"
+    ExecutorCmds = "(?i:create\\s+database$|show\\s+series|show\\s+measurements|show\\s+tag\\s+keys|show\\s+tag\\s+values|show\\s+field\\s+keys|show\\s+retention\\s+policies)"
 )

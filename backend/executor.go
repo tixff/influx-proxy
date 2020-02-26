@@ -11,11 +11,19 @@ import (
     "errors"
     "fmt"
     "io"
+    "io/ioutil"
     "net/http"
     "regexp"
     "strings"
 
     "github.com/influxdata/influxdb1-client/models"
+)
+
+var (
+    createDatabasePattern, _        = regexp.Compile("^create\\s+database$")
+    showConcatByValuesPattern, _    = regexp.Compile("^show\\s+retention\\s+policies")
+    showReduceByValuesPattern, _    = regexp.Compile("^show\\s+series|^show\\s+measurements")
+    showReduceBySeriesPattern, _    = regexp.Compile("^show\\s+tag\\s+keys|^show\\s+tag\\s+values|^show\\s+field\\s+keys")
 )
 
 type InfluxQLExecutor struct {
@@ -37,9 +45,77 @@ func GzipCompress(b []byte) (cb []byte, err error) {
     return
 }
 
+func ReadBodyBytes(req *http.Request) (bodyBytes []byte) {
+    if req.Body != nil {
+        bodyBytes, _ = ioutil.ReadAll(req.Body)
+    }
+    return
+}
+
+func WriteResponse(w http.ResponseWriter, header http.Header, status int, body []byte) {
+    copyHeader(w.Header(), header)
+    if status > 0 {
+        w.WriteHeader(status)
+    }
+    if body == nil {
+        body, _ = ResultSetBytesFromSeries(nil)
+    }
+    if header.Get("Content-Encoding") == "gzip" {
+        gzipBody, _ := GzipCompress(body)
+        w.Write(gzipBody)
+    } else {
+        w.Write(body)
+    }
+}
+
 func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, backends map[string]BackendAPI) (err error) {
+    q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
+    if strings.HasPrefix(q, "create") {
+        return iqe.QueryCreateQL(w, req, backends)
+    } else if strings.HasPrefix(q, "show") {
+        return iqe.QueryShowQL(w, req, backends)
+    }
+    body, _ := ResultSetBytesFromSeries(nil)
+    w.Write(body)
+    return
+}
+
+func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request, backends map[string]BackendAPI) (err error) {
+    q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
+    reqBodyBytes := ReadBodyBytes(req)
+    var header http.Header
+    var inactive int
+    if createDatabasePattern.MatchString(q) {
+        for _, api := range backends {
+            if !api.IsActive() {
+                inactive++
+                continue
+            }
+            hb := api.(*Backends)
+            req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
+            req.Form.Del("db")
+            req.Form.Set("q", "create database " + hb.DB)
+            _header, _, _, _err := api.QueryResp(req)
+            if _err != nil {
+                err = _err
+                return
+            }
+            header = _header
+        }
+    }
+    var rerr error
+    if inactive > 0 {
+        rerr = errors.New(fmt.Sprintf("%d/%d backends not active", inactive, len(backends)))
+    }
+    body, _ := ResultSetBytesFromSeriesAndError(nil, rerr)
+    WriteResponse(w, header, http.StatusOK, body)
+    return
+}
+
+func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Request, backends map[string]BackendAPI) (err error) {
     // remove support of query parameter `chunked`
     req.Form.Del("chunked")
+    reqBodyBytes := ReadBodyBytes(req)
     var header http.Header
     var status int
     var bodies [][]byte
@@ -52,6 +128,7 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, bac
             inactive++
             continue
         }
+        req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
         _header, _status, _body, _err := api.QueryResp(req)
         if _status >= http.StatusBadRequest {
             copyHeader(w.Header(), _header)
@@ -75,14 +152,13 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, bac
     }
     if len(bodies) == 0 {
         rbody, err = ResultSetBytesFromSeriesAndError(nil, rerr)
-        status = http.StatusOK
     } else {
         q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
-        if matched, _ := regexp.MatchString("^show\\s+retention\\s+policies", q); matched {
+        if showConcatByValuesPattern.MatchString(q) {
             rbody, err = iqe.concatByValues(bodies, rerr)
-        } else if matched, _ := regexp.MatchString("^show\\s+series|^show\\s+measurements", q); matched {
+        } else if showReduceByValuesPattern.MatchString(q) {
             rbody, err = iqe.reduceByValues(bodies, rerr)
-        } else if matched, _ := regexp.MatchString("^show\\s+tag\\s+keys|^show\\s+tag\\s+values|^show\\s+field\\s+keys", q); matched {
+        } else if showReduceBySeriesPattern.MatchString(q) {
             rbody, err = iqe.reduceBySeries(bodies, rerr)
         }
     }
@@ -90,19 +166,7 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, bac
         return
     }
 
-    copyHeader(w.Header(), header)
-    w.WriteHeader(status)
-    if header.Get("Content-Encoding") == "gzip" {
-        gzipBody, _err := GzipCompress(rbody)
-        if _err != nil {
-            err = _err
-            return
-        } else {
-            w.Write(gzipBody)
-        }
-    } else {
-        w.Write(rbody)
-    }
+    WriteResponse(w, header, status, rbody)
     return
 }
 

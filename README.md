@@ -161,6 +161,7 @@ Only support match the following commands.
 * `show tag values`
 * `show field keys`
 * `show retention policies`
+* `create database`
 
 License
 -------
