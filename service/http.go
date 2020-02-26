@@ -35,21 +35,18 @@ func NewHttpService(ic *backend.InfluxCluster, nodecfg *backend.NodeConfig) (hs 
     return
 }
 
-func ParseCredentials(req *http.Request) (username string, password string) {
+func (hs *HttpService) checkAuth(req *http.Request) bool {
+    if hs.username == "" && hs.password == "" {
+        return true
+    }
     q := req.URL.Query()
-    // Check for username and password in URL params.
-    if u, p := q.Get("u"), q.Get("p"); u != "" && p != "" {
-        username = u
-        password = p
-        return
+    if u, p := q.Get("u"), q.Get("p"); u == hs.username && p == hs.password {
+        return true
     }
-    // Check for the HTTP Authorization header.
-    if u, p, ok := req.BasicAuth(); ok {
-        username = u
-        password = p
-        return
+    if u, p, ok := req.BasicAuth(); ok && u == hs.username && p == hs.password {
+        return true
     }
-    return
+    return false
 }
 
 func (hs *HttpService) Register(mux *http.ServeMux) {
@@ -92,22 +89,17 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
     defer req.Body.Close()
     w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
-    if hs.username != "" {
-        username, password := ParseCredentials(req)
-        if username != hs.username || password != hs.password {
-            w.WriteHeader(401)
-            w.Write([]byte("unable to parse authentication credentials\n"))
-            return
-        }
+    if !hs.checkAuth(req) {
+        w.WriteHeader(401)
+        w.Write([]byte("authentication failed\n"))
+        return
     }
 
     db := req.FormValue("db")
-    if hs.db != "" {
-        if db != hs.db {
-            w.WriteHeader(404)
-            w.Write([]byte("database not exist\n"))
-            return
-        }
+    if hs.db != "" && db != hs.db {
+        w.WriteHeader(404)
+        w.Write([]byte("database not exist\n"))
+        return
     }
 
     q := strings.TrimSpace(req.FormValue("q"))
@@ -127,13 +119,10 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
     defer req.Body.Close()
     w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
-    if hs.username != "" {
-        username, password := ParseCredentials(req)
-        if username != hs.username || password != hs.password {
-            w.WriteHeader(401)
-            w.Write([]byte("unable to parse authentication credentials\n"))
-            return
-        }
+    if !hs.checkAuth(req) {
+        w.WriteHeader(401)
+        w.Write([]byte("authentication failed\n"))
+        return
     }
 
     if req.Method != "POST" {
@@ -143,12 +132,10 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
     }
 
     db := req.URL.Query().Get("db")
-    if hs.db != "" {
-        if db != hs.db {
-            w.WriteHeader(404)
-            w.Write([]byte("database not exist\n"))
-            return
-        }
+    if hs.db != "" && db != hs.db {
+        w.WriteHeader(404)
+        w.Write([]byte("database not exist\n"))
+        return
     }
 
     body := req.Body
