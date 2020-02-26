@@ -8,7 +8,6 @@ package backend
 import (
     "bytes"
     "compress/gzip"
-    "errors"
     "fmt"
     "io"
     "io/ioutil"
@@ -58,7 +57,7 @@ func WriteResponse(w http.ResponseWriter, header http.Header, status int, body [
         w.WriteHeader(status)
     }
     if body == nil {
-        body, _ = ResultSetBytesFromSeries(nil)
+        body, _ = ResponseBytesFromSeries(nil)
     }
     if header.Get("Content-Encoding") == "gzip" {
         gzipBody, _ := GzipCompress(body)
@@ -75,7 +74,7 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, bac
     } else if strings.HasPrefix(q, "show") {
         return iqe.QueryShowQL(w, req, backends)
     }
-    body, _ := ResultSetBytesFromSeries(nil)
+    body, _ := ResponseBytesFromSeries(nil)
     w.Write(body)
     return
 }
@@ -103,11 +102,11 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
             header = _header
         }
     }
-    var rerr error
+    var rerr string
     if inactive > 0 {
-        rerr = errors.New(fmt.Sprintf("%d/%d backends not active", inactive, len(backends)))
+        rerr = fmt.Sprintf("%d/%d backends not active", inactive, len(backends))
     }
-    body, _ := ResultSetBytesFromSeriesAndError(nil, rerr)
+    body, _ := ResponseBytesFromSeriesWithErr(nil, rerr)
     WriteResponse(w, header, http.StatusOK, body)
     return
 }
@@ -145,36 +144,36 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
         bodies = append(bodies, _body)
     }
 
-    var rbody []byte
-    var rerr error
+    var body []byte
+    var rerr string
     if inactive > 0 {
-        rerr = errors.New(fmt.Sprintf("%d/%d backends not active", inactive, inactive + len(bodies)))
+        rerr = fmt.Sprintf("%d/%d backends not active", inactive, inactive + len(bodies))
     }
     if len(bodies) == 0 {
-        rbody, err = ResultSetBytesFromSeriesAndError(nil, rerr)
+        body, err = ResponseBytesFromSeriesWithErr(nil, rerr)
     } else {
         q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
         if showConcatByValuesPattern.MatchString(q) {
-            rbody, err = iqe.concatByValues(bodies, rerr)
+            body, err = iqe.concatByValues(bodies, rerr)
         } else if showReduceByValuesPattern.MatchString(q) {
-            rbody, err = iqe.reduceByValues(bodies, rerr)
+            body, err = iqe.reduceByValues(bodies, rerr)
         } else if showReduceBySeriesPattern.MatchString(q) {
-            rbody, err = iqe.reduceBySeries(bodies, rerr)
+            body, err = iqe.reduceBySeries(bodies, rerr)
         }
     }
     if err != nil {
         return
     }
 
-    WriteResponse(w, header, status, rbody)
+    WriteResponse(w, header, status, body)
     return
 }
 
-func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte, rerr error) (rbody []byte, err error) {
-    var series []*models.Row
+func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte, rerr string) (body []byte, err error) {
+    var series models.Rows
     var values [][]interface{}
-    for _, body := range bodies {
-        _series, _err := SeriesFromResultSetBytes(body)
+    for _, b := range bodies {
+        _series, _err := SeriesFromResponseBytes(b)
         if _err != nil {
             err = _err
             return
@@ -189,16 +188,16 @@ func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte, rerr error) (rbody 
     if len(series) == 1 {
         series[0].Values = values
     }
-    rbody, err = ResultSetBytesFromSeriesAndError(series, rerr)
+    body, err = ResponseBytesFromSeriesWithErr(series, rerr)
     return
 }
 
-func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte, rerr error) (rbody []byte, err error) {
-    var series []*models.Row
+func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte, rerr string) (body []byte, err error) {
+    var series models.Rows
     var values [][]interface{}
     valuesMap := make(map[string][]interface{})
-    for _, body := range bodies {
-        _series, _err := SeriesFromResultSetBytes(body)
+    for _, b := range bodies {
+        _series, _err := SeriesFromResponseBytes(b)
         if _err != nil {
             err = _err
             return
@@ -219,15 +218,15 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte, rerr error) (rbody 
         }
         series[0].Values = values
     }
-    rbody, err = ResultSetBytesFromSeriesAndError(series, rerr)
+    body, err = ResponseBytesFromSeriesWithErr(series, rerr)
     return
 }
 
-func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte, rerr error) (rbody []byte, err error) {
-    var series []*models.Row
+func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte, rerr string) (body []byte, err error) {
+    var series models.Rows
     seriesMap := make(map[string]*models.Row)
-    for _, body := range bodies {
-        _series, _err := SeriesFromResultSetBytes(body)
+    for _, b := range bodies {
+        _series, _err := SeriesFromResponseBytes(b)
         if _err != nil {
             err = _err
             return
@@ -241,6 +240,6 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte, rerr error) (rbody 
     for _, serie := range seriesMap {
         series = append(series, serie)
     }
-    rbody, err = ResultSetBytesFromSeriesAndError(series, rerr)
+    body, err = ResponseBytesFromSeriesWithErr(series, rerr)
     return
 }
