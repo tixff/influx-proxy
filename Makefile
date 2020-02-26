@@ -11,11 +11,11 @@ all: build
 
 build:
 	mkdir -p bin
-	go build -o bin/influx-proxy -ldflags "-X main.GitCommit=$(shell git rev-parse HEAD | cut -c 1-7) -X 'main.BuildTime=$(shell date '+%Y-%m-%d %H:%M:%S')'" github.com/chengshiwen/influx-proxy/service
+	go build -o bin/influx-proxy -ldflags "-X main.GitCommit=$(shell git rev-parse HEAD | cut -c 1-7) -X 'main.BuildTime=$(shell date '+%Y-%m-%d %H:%M:%S')'" github.com/chengshiwen/influx-proxy
 
 linux:
 	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/influx-proxy -ldflags "-s -X main.GitCommit=$(shell git rev-parse HEAD | cut -c 1-7) -X 'main.BuildTime=$(shell date '+%Y-%m-%d %H:%M:%S')'" github.com/chengshiwen/influx-proxy/service
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/influx-proxy -ldflags "-s -X main.GitCommit=$(shell git rev-parse HEAD | cut -c 1-7) -X 'main.BuildTime=$(shell date '+%Y-%m-%d %H:%M:%S')'" github.com/chengshiwen/influx-proxy
 
 test:
 	rm -rf data/test
@@ -27,8 +27,8 @@ bench:
 	mkdir -p data/test
 	go test -bench=. github.com/chengshiwen/influx-proxy/backend
 
-run: build
-	bin/influx-proxy -config proxy.json
+run:
+	go run main.go
 
 clean:
 	rm -rf bin data

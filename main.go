@@ -15,6 +15,7 @@ import (
     "time"
 
     "github.com/chengshiwen/influx-proxy/backend"
+    "github.com/chengshiwen/influx-proxy/service"
     "gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -94,7 +95,7 @@ func main() {
     ic.LoadConfig()
 
     mux := http.NewServeMux()
-    NewHttpService(ic, &nodecfg).Register(mux)
+    service.NewHttpService(ic, &nodecfg).Register(mux)
 
     log.Printf("http service start")
     server := &http.Server{
