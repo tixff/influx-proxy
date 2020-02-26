@@ -132,6 +132,8 @@ The configurations in `proxy.json` are the following:
 * `idletimeout`: keep-alives wait time
 * `writetracing`: enable logging for the write, default is 0
 * `querytracing`: enable logging for the query, default is 0
+* `datadir`: data dir to save .dat .rec, default is data
+* `logpath`: log file path, default "" for stdout
 * `httpsenabled`: enable https, default is false
 * `httpscert`: the ssl certificate to use when https is enabled
 * `httpskey`: use a separate private key location

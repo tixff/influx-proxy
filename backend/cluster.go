@@ -140,7 +140,7 @@ type Statistics struct {
     QueryRequestDuration int64
 }
 
-func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig, datadir string) (ic *InfluxCluster) {
+func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig) (ic *InfluxCluster) {
     ic = &InfluxCluster{
         query_executor: &InfluxQLExecutor{},
         cfgsrc:         cfgsrc,
@@ -148,7 +148,7 @@ func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig, datadir str
         counter:        &Statistics{},
         ticker:         time.NewTicker(10 * time.Second),
         defaultTags:    map[string]string{"addr": nodecfg.ListenAddr},
-        datadir:        datadir,
+        datadir:        nodecfg.DataDir,
         WriteTracing:   nodecfg.WriteTracing,
         QueryTracing:   nodecfg.QueryTracing,
     }

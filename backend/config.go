@@ -27,6 +27,8 @@ var (
 // idletimeout: keep-alives wait time
 // writetracing: enable logging for the write, default is 0
 // querytracing: enable logging for the query, default is 0
+// datadir: data dir to save .dat .rec, default is data
+// logpath: log file path, default "" for stdout
 // httpsenabled: enable https, default is false
 // httpscert: the ssl certificate to use when https is enabled
 // httpskey: use a separate private key location
@@ -39,6 +41,8 @@ type NodeConfig struct {
     IdleTimeout  int
     WriteTracing int
     QueryTracing int
+    DataDir      string
+    LogPath      string
     HTTPSEnabled bool
     HTTPSCert    string
     HTTPSKey     string
@@ -105,7 +109,9 @@ func (fcs *FileConfigSource) LoadNode() (nodecfg NodeConfig) {
     if nodecfg.ListenAddr == "" {
         nodecfg.ListenAddr = ":7076"
     }
-    log.Printf("node config loaded.")
+    if nodecfg.DataDir == "" {
+        nodecfg.DataDir = "data"
+    }
     return
 }
 
@@ -145,12 +151,12 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
         }
         backends[name] = cfg
     }
-    log.Printf("%d backends loaded from file.", len(backends))
+    log.Printf("%d backends loaded from file", len(backends))
     return
 }
 
 func (fcs *FileConfigSource) LoadMeasurements() (m_map map[string][]string, err error) {
     m_map = fcs.KEYMAPS
-    log.Printf("%d measurements loaded from file.", len(m_map))
+    log.Printf("%d measurements loaded from file", len(m_map))
     return
 }

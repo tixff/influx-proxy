@@ -21,34 +21,41 @@ import (
 var (
     ErrConfig   = errors.New("config parse error")
     ConfigFile  string
-    DataDir     string
-    LogPath     string
     Version     bool
-
     GitCommit   string
     BuildTime   string
 )
 
 func init() {
     log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
-
     flag.StringVar(&ConfigFile, "config", "proxy.json", "proxy config file")
-    flag.StringVar(&DataDir, "data-dir", "data", "data dir to save .dat .rec")
-    flag.StringVar(&LogPath, "log-path", "", "log file path (default \"\")")
     flag.BoolVar(&Version, "version", false, "proxy version")
     flag.Parse()
 }
 
-func initLog() {
-    if LogPath == "" {
+func initLog(logPath string) {
+    if logPath == "" {
         log.SetOutput(os.Stdout)
     } else {
         log.SetOutput(&lumberjack.Logger{
-            Filename:   LogPath,
+            Filename:   logPath,
             MaxSize:    100,
             MaxBackups: 5,
             MaxAge:     7,
         })
+    }
+}
+
+func createDataDir(dataDir string)  {
+    exist, err := pathExists(dataDir)
+    if err != nil {
+        log.Fatalln("check data dir error")
+    }
+    if !exist {
+        err = os.MkdirAll(dataDir, os.ModePerm)
+        if err != nil {
+            log.Fatalln("create data dir error")
+        }
     }
 }
 
@@ -73,35 +80,23 @@ func main() {
         return
     }
 
-    initLog()
-
-    exist, err := pathExists(DataDir)
-    if err != nil {
-        log.Println("check data dir error")
-        return
-    }
-    if !exist {
-        err = os.MkdirAll(DataDir, os.ModePerm)
-        if err != nil {
-            log.Println("create data dir error")
-            return
-        }
-    }
-
     fcs, err := backend.NewFileConfigSource(ConfigFile)
     if err != nil {
-        log.Printf("config source load failed.")
+        fmt.Println("config source load failed")
         return
     }
     nodecfg := fcs.LoadNode()
 
-    ic := backend.NewInfluxCluster(fcs, &nodecfg, DataDir)
+    initLog(nodecfg.LogPath)
+    createDataDir(nodecfg.DataDir)
+
+    ic := backend.NewInfluxCluster(fcs, &nodecfg)
     ic.LoadConfig()
 
     mux := http.NewServeMux()
     NewHttpService(ic, &nodecfg).Register(mux)
 
-    log.Printf("http service start.")
+    log.Printf("http service start")
     server := &http.Server{
         Addr:        nodecfg.ListenAddr,
         Handler:     mux,

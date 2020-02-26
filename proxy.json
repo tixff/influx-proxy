@@ -39,6 +39,8 @@
         "idletimeout": 10,
         "writetracing": 0,
         "querytracing": 0,
+        "datadir": "data",
+        "logpath": "",
         "httpsenabled": false,
         "httpscert": "",
         "httpskey": ""

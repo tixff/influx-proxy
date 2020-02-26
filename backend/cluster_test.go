@@ -78,8 +78,8 @@ func BenchmarkScanKey(b *testing.B) {
 
 func CreateTestInfluxCluster() (ic *InfluxCluster, err error) {
     fileConfig := &FileConfigSource{}
-    nodeConfig := &NodeConfig{}
-    ic = NewInfluxCluster(fileConfig, nodeConfig, "../data/test")
+    nodeConfig := &NodeConfig{DataDir:"../data/test"}
+    ic = NewInfluxCluster(fileConfig, nodeConfig)
     backends := make(map[string]BackendAPI)
     bkcfgs := make(map[string]*BackendConfig)
     cfg, _ := CreateTestBackendConfig("test1")
@@ -90,7 +90,7 @@ func CreateTestInfluxCluster() (ic *InfluxCluster, err error) {
     cfg.WriteOnly = 1
     bkcfgs["write_only"] = cfg
     for name, cfg := range bkcfgs {
-        backends[name], err = NewBackends(cfg, name, "../data/test")
+        backends[name], err = NewBackends(cfg, name, ic.datadir)
         if err != nil {
             return
         }
