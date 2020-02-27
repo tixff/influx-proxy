@@ -21,7 +21,7 @@ import (
 var (
     createDatabasePattern, _        = regexp.Compile("^create\\s+database$")
     showConcatByValuesPattern, _    = regexp.Compile("^show\\s+retention\\s+policies")
-    showReduceByValuesPattern, _    = regexp.Compile("^show\\s+series|^show\\s+measurements")
+    showReduceByValuesPattern, _    = regexp.Compile("^show\\s+databases$|show\\s+series|^show\\s+measurements")
     showReduceBySeriesPattern, _    = regexp.Compile("^show\\s+tag\\s+keys|^show\\s+tag\\s+values|^show\\s+field\\s+keys")
 )
 
