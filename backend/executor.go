@@ -12,20 +12,13 @@ import (
     "io"
     "io/ioutil"
     "net/http"
-    "regexp"
     "strings"
 
     "github.com/influxdata/influxdb1-client/models"
 )
 
-var (
-    createDatabasePattern, _        = regexp.Compile("^create\\s+database$")
-    showConcatByValuesPattern, _    = regexp.Compile("^show\\s+retention\\s+policies")
-    showReduceByValuesPattern, _    = regexp.Compile("^show\\s+databases$|show\\s+series|^show\\s+measurements")
-    showReduceBySeriesPattern, _    = regexp.Compile("^show\\s+tag\\s+keys|^show\\s+tag\\s+values|^show\\s+field\\s+keys")
-)
-
 type InfluxQLExecutor struct {
+    ic *InfluxCluster
 }
 
 func GzipCompress(b []byte) (cb []byte, err error) {
@@ -67,51 +60,19 @@ func WriteResponse(w http.ResponseWriter, header http.Header, status int, body [
     }
 }
 
-func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, backends map[string]BackendAPI) (err error) {
+func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request) (err error) {
     q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
-    if strings.HasPrefix(q, "create") {
-        return iqe.QueryCreateQL(w, req, backends)
-    } else if strings.HasPrefix(q, "show") {
-        return iqe.QueryShowQL(w, req, backends)
+    if strings.HasPrefix(q, "show") {
+        return iqe.QueryShowQL(w, req)
+    } else if strings.HasPrefix(q, "create") {
+        return iqe.QueryCreateQL(w, req)
     }
     body, _ := ResponseBytesFromSeries(nil)
     w.Write(body)
     return
 }
 
-func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request, backends map[string]BackendAPI) (err error) {
-    q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
-    reqBodyBytes := ReadBodyBytes(req)
-    var header http.Header
-    var inactive int
-    if createDatabasePattern.MatchString(q) {
-        for _, api := range backends {
-            if !api.IsActive() {
-                inactive++
-                continue
-            }
-            hb := api.(*Backends)
-            req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
-            req.Form.Del("db")
-            req.Form.Set("q", "create database " + hb.DB)
-            _header, _, _, _err := api.QueryResp(req)
-            if _err != nil {
-                err = _err
-                return
-            }
-            header = _header
-        }
-    }
-    var rerr string
-    if inactive > 0 {
-        rerr = fmt.Sprintf("%d/%d backends not active", inactive, len(backends))
-    }
-    body, _ := ResponseBytesFromSeriesWithErr(nil, rerr)
-    WriteResponse(w, header, http.StatusOK, body)
-    return
-}
-
-func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Request, backends map[string]BackendAPI) (err error) {
+func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Request) (err error) {
     // remove support of query parameter `chunked`
     req.Form.Del("chunked")
     reqBodyBytes := ReadBodyBytes(req)
@@ -119,7 +80,7 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
     var status int
     var bodies [][]byte
     var inactive int
-    for _, api := range backends {
+    for _, api := range iqe.ic.backends {
         if api.IsWriteOnly() {
             continue
         }
@@ -152,13 +113,13 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
     if len(bodies) == 0 {
         body, err = ResponseBytesFromSeriesWithErr(nil, rerr)
     } else {
-        q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
-        if showConcatByValuesPattern.MatchString(q) {
-            body, err = iqe.concatByValues(bodies, rerr)
-        } else if showReduceByValuesPattern.MatchString(q) {
+        q := strings.TrimSpace(req.FormValue("q"))
+        if iqe.ic.ExecutedQuery[0].MatchString(q) {
             body, err = iqe.reduceByValues(bodies, rerr)
-        } else if showReduceBySeriesPattern.MatchString(q) {
+        } else if iqe.ic.ExecutedQuery[1].MatchString(q) {
             body, err = iqe.reduceBySeries(bodies, rerr)
+        } else if iqe.ic.ExecutedQuery[2].MatchString(q) {
+            body, err = iqe.concatByValues(bodies, rerr)
         }
     }
     if err != nil {
@@ -169,26 +130,35 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
     return
 }
 
-func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte, rerr string) (body []byte, err error) {
-    var series models.Rows
-    var values [][]interface{}
-    for _, b := range bodies {
-        _series, _err := SeriesFromResponseBytes(b)
-        if _err != nil {
-            err = _err
-            return
-        }
-        if len(_series) == 1 {
-            series = _series
-            for _, value := range _series[0].Values {
-                values = append(values, value)
+func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request) (err error) {
+    q := strings.TrimSpace(req.FormValue("q"))
+    reqBodyBytes := ReadBodyBytes(req)
+    var header http.Header
+    var inactive int
+    if iqe.ic.ExecutedQuery[3].MatchString(q) {
+        for _, api := range iqe.ic.backends {
+            if !api.IsActive() {
+                inactive++
+                continue
             }
+            hb := api.(*Backends)
+            req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
+            req.Form.Del("db")
+            req.Form.Set("q", "create database " + hb.DB)
+            _header, _, _, _err := api.QueryResp(req)
+            if _err != nil {
+                err = _err
+                return
+            }
+            header = _header
         }
     }
-    if len(series) == 1 {
-        series[0].Values = values
+    var rerr string
+    if inactive > 0 {
+        rerr = fmt.Sprintf("%d/%d backends not active", inactive, len(iqe.ic.backends))
     }
-    body, err = ResponseBytesFromSeriesWithErr(series, rerr)
+    body, _ := ResponseBytesFromSeriesWithErr(nil, rerr)
+    WriteResponse(w, header, http.StatusOK, body)
     return
 }
 
@@ -239,6 +209,29 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte, rerr string) (body 
     }
     for _, serie := range seriesMap {
         series = append(series, serie)
+    }
+    body, err = ResponseBytesFromSeriesWithErr(series, rerr)
+    return
+}
+
+func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte, rerr string) (body []byte, err error) {
+    var series models.Rows
+    var values [][]interface{}
+    for _, b := range bodies {
+        _series, _err := SeriesFromResponseBytes(b)
+        if _err != nil {
+            err = _err
+            return
+        }
+        if len(_series) == 1 {
+            series = _series
+            for _, value := range _series[0].Values {
+                values = append(values, value)
+            }
+        }
+    }
+    if len(series) == 1 {
+        series[0].Values = values
     }
     body, err = ResponseBytesFromSeriesWithErr(series, rerr)
     return

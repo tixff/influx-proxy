@@ -152,6 +152,7 @@ func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig) (ic *Influx
         WriteTracing:   nodecfg.WriteTracing,
         QueryTracing:   nodecfg.QueryTracing,
     }
+    ic.query_executor.ic = ic
     host, err := os.Hostname()
     if err != nil {
         log.Println(err)
@@ -161,21 +162,9 @@ func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig) (ic *Influx
         ic.ticker = time.NewTicker(time.Second * time.Duration(nodecfg.Interval))
     }
 
-    err = ic.ForbidQuery(ForbidCmds)
-    if err != nil {
-        panic(err)
-        return
-    }
-    err = ic.EnsureQuery(SupportCmds)
-    if err != nil {
-        panic(err)
-        return
-    }
-    err = ic.ExecuteQuery(ExecutorCmds)
-    if err != nil {
-        panic(err)
-        return
-    }
+    ic.ForbidQuery(ForbidCmds)
+    ic.EnsureQuery(SupportCmds)
+    ic.ExecuteQuery(ExecutorCmds)
 
     // feature
     go ic.statistics()
@@ -234,40 +223,43 @@ func (ic *InfluxCluster) WriteStatistics() (err error) {
     return ic.Write([]byte(line + "\n"), "ns")
 }
 
-func (ic *InfluxCluster) ForbidQuery(s string) (err error) {
-    r, err := regexp.Compile(s)
-    if err != nil {
-        return
-    }
-
+func (ic *InfluxCluster) ForbidQuery(cmds []string) {
     ic.lock.Lock()
     defer ic.lock.Unlock()
-    ic.ForbiddenQuery = append(ic.ForbiddenQuery, r)
-    return
+    for _, cmd := range cmds {
+        r, err := regexp.Compile(cmd)
+        if err != nil {
+            panic(err)
+            return
+        }
+        ic.ForbiddenQuery = append(ic.ForbiddenQuery, r)
+    }
 }
 
-func (ic *InfluxCluster) EnsureQuery(s string) (err error) {
-    r, err := regexp.Compile(s)
-    if err != nil {
-        return
-    }
-
+func (ic *InfluxCluster) EnsureQuery(cmds []string) {
     ic.lock.Lock()
     defer ic.lock.Unlock()
-    ic.ObligatedQuery = append(ic.ObligatedQuery, r)
-    return
+    for _, cmd := range cmds {
+        r, err := regexp.Compile(cmd)
+        if err != nil {
+            panic(err)
+            return
+        }
+        ic.ObligatedQuery = append(ic.ObligatedQuery, r)
+    }
 }
 
-func (ic *InfluxCluster) ExecuteQuery(s string) (err error) {
-    r, err := regexp.Compile(s)
-    if err != nil {
-        return
-    }
-
+func (ic *InfluxCluster) ExecuteQuery(cmds []string) {
     ic.lock.Lock()
     defer ic.lock.Unlock()
-    ic.ExecutedQuery = append(ic.ExecutedQuery, r)
-    return
+    for _, cmd := range cmds {
+        r, err := regexp.Compile(cmd)
+        if err != nil {
+            panic(err)
+            return
+        }
+        ic.ExecutedQuery = append(ic.ExecutedQuery, r)
+    }
 }
 
 func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, err error) {
@@ -436,7 +428,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     if err != nil {
         err = ic.CheckClusterQuery(q)
         if err == nil {
-            err = ic.query_executor.Query(w, req, ic.backends)
+            err = ic.query_executor.Query(w, req)
             if err != nil {
                 log.Print("query executor error: ", err)
                 w.WriteHeader(400)

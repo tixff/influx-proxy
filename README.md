@@ -153,11 +153,11 @@ Only support match the following commands.
 
 * `.* from .*`
 * `drop measurement`
-* `show series`
 * `show measurements`
+* `show series`
+* `show field keys`
 * `show tag keys`
 * `show tag values`
-* `show field keys`
 * `show retention policies`
 * `show databases`
 * `create database`

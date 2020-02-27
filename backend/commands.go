@@ -5,7 +5,12 @@
 package backend
 
 var (
-    ForbidCmds   = "(?i:^\\s*grant|^\\s*revoke|\\(\\)\\$)"
-    SupportCmds  = "(?i:from|drop\\s+measurement)"
-    ExecutorCmds = "(?i:create\\s+database$|show\\s+databases$|show\\s+series|show\\s+measurements|show\\s+tag\\s+keys|show\\s+tag\\s+values|show\\s+field\\s+keys|show\\s+retention\\s+policies)"
+    ForbidCmds   = []string{"(?i:^\\s*grant|^\\s*revoke|\\(\\)\\$)"}
+    SupportCmds  = []string{"(?i:from|^drop\\s+measurement)"}
+    ExecutorCmds = []string{
+        "(?i:^show\\s+measurements|^show\\s+series|^show\\s+databases$)",
+        "(?i:^show\\s+field\\s+keys|^show\\s+tag\\s+keys|^show\\s+tag\\s+values)",
+        "(?i:^show\\s+retention\\s+policies)",
+        "(?i:^create\\s+database)",
+    }
 )

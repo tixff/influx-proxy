@@ -115,7 +115,7 @@ func (hb *HttpBackend) Ping() (version string, err error) {
     if resp.StatusCode == 204 {
         return
     }
-    log.Printf("write status code: %d, the backend is %s\n", resp.StatusCode, hb.URL)
+    log.Printf("ping status code: %d, the backend is %s\n", resp.StatusCode, hb.URL)
 
     respbuf, err := ioutil.ReadAll(resp.Body)
     if err != nil {
