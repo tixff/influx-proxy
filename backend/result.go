@@ -75,3 +75,37 @@ func ResponseBytesFromSeriesWithErr(series models.Rows, err string) (b []byte, e
     b = append(b, '\n')
     return
 }
+
+func ResultsFromResponseBytes(b []byte) (results []*Result, e error) {
+    var rsp Response
+    e = json.Unmarshal(b, &rsp)
+    if e == nil && len(rsp.Results) > 0 {
+        results = rsp.Results
+    }
+    return
+}
+
+func ResponseBytesFromResults(results []*Result) (b []byte, e error) {
+    rsp := Response{
+        Results: results,
+    }
+    b, e = json.Marshal(rsp)
+    if e != nil {
+        return
+    }
+    b = append(b, '\n')
+    return
+}
+
+func ResponseBytesFromResultsWithErr(results []*Result, err string) (b []byte, e error) {
+    rsp := Response{
+        Results: results,
+        Err: err,
+    }
+    b, e = json.Marshal(rsp)
+    if e != nil {
+        return
+    }
+    b = append(b, '\n')
+    return
+}

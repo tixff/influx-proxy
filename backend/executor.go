@@ -119,6 +119,8 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
         } else if iqe.ic.ExecutedQuery[1].MatchString(q) {
             body, err = iqe.reduceBySeries(bodies, rerr)
         } else if iqe.ic.ExecutedQuery[2].MatchString(q) {
+            body, err = iqe.concatByResults(bodies, rerr)
+        } else if iqe.ic.ExecutedQuery[3].MatchString(q) {
             body, err = iqe.concatByValues(bodies, rerr)
         }
     }
@@ -135,7 +137,7 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
     reqBodyBytes := ReadBodyBytes(req)
     var header http.Header
     var inactive int
-    if iqe.ic.ExecutedQuery[3].MatchString(q) {
+    if iqe.ic.ExecutedQuery[4].MatchString(q) {
         for _, api := range iqe.ic.backends {
             if !api.IsActive() {
                 inactive++
@@ -211,6 +213,22 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte, rerr string) (body 
         series = append(series, serie)
     }
     body, err = ResponseBytesFromSeriesWithErr(series, rerr)
+    return
+}
+
+func (iqe *InfluxQLExecutor) concatByResults(bodies [][]byte, rerr string) (body []byte, err error) {
+    var results []*Result
+    for _, b := range bodies {
+        _results, _err := ResultsFromResponseBytes(b)
+        if _err != nil {
+            err = _err
+            return
+        }
+        if len(_results) == 1 {
+            results = append(results, _results[0])
+        }
+    }
+    body, err = ResponseBytesFromResultsWithErr(results, rerr)
     return
 }
 
