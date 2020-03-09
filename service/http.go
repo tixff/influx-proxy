@@ -50,27 +50,11 @@ func (hs *HttpService) checkAuth(req *http.Request) bool {
 }
 
 func (hs *HttpService) Register(mux *http.ServeMux) {
-    mux.HandleFunc("/reload", hs.HandlerReload)
     mux.HandleFunc("/ping", hs.HandlerPing)
     mux.HandleFunc("/query", hs.HandlerQuery)
     mux.HandleFunc("/write", hs.HandlerWrite)
     mux.HandleFunc("/debug/pprof/", pprof.Index)
     mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-}
-
-func (hs *HttpService) HandlerReload(w http.ResponseWriter, req *http.Request) {
-    defer req.Body.Close()
-    w.Header().Add("X-Influxdb-Version", backend.VERSION)
-
-    err := hs.ic.LoadConfig()
-    if err != nil {
-        w.WriteHeader(400)
-        w.Write([]byte(err.Error()))
-        return
-    }
-
-    w.WriteHeader(204)
-    return
 }
 
 func (hs *HttpService) HandlerPing(w http.ResponseWriter, req *http.Request) {

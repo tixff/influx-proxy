@@ -86,7 +86,7 @@ func (hb *HttpBackend) CheckActive() {
     var err error
     for hb.running {
         _, err = hb.Ping()
-        hb.Active = (err == nil)
+        hb.Active = err == nil
         time.Sleep(time.Millisecond * time.Duration(hb.Interval))
     }
 }

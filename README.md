@@ -158,6 +158,7 @@ Only support match the following commands.
 * `show field keys`
 * `show tag keys`
 * `show tag values`
+* `show stats`
 * `show retention policies`
 * `show databases`
 * `create database`
