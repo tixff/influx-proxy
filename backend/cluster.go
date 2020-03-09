@@ -12,7 +12,6 @@ import (
     "net/http"
     "os"
     "regexp"
-    "strconv"
     "strings"
     "sync"
     "sync/atomic"
@@ -20,7 +19,6 @@ import (
     "unsafe"
 
     "github.com/chengshiwen/influx-proxy/monitor"
-    "github.com/influxdata/influxdb1-client/models"
 )
 
 var (
@@ -31,83 +29,6 @@ var (
 )
 
 var StatisticsMetricName = "influxdb.cluster.statistics"
-
-func ScanKey(pointbuf []byte) (key string, err error) {
-    var keybuf [100]byte
-    keyslice := keybuf[0:0]
-    buflen := len(pointbuf)
-    for i := 0; i < buflen; i++ {
-        c := pointbuf[i]
-        switch c {
-        case '\\':
-            i++
-            keyslice = append(keyslice, pointbuf[i])
-        case ' ', ',':
-            key = string(keyslice)
-            return
-        default:
-            keyslice = append(keyslice, c)
-        }
-    }
-    return "", io.EOF
-}
-
-func Int64ToBytes(n int64) []byte {
-    return []byte(strconv.FormatInt(n, 10))
-}
-
-func BytesToInt64(buf []byte) int64 {
-    var res int64 = 0
-    var length = len(buf)
-    for i := 0; i < length; i++ {
-        res = res * 10 + int64(buf[i]-'0')
-    }
-    return res
-}
-
-func ScanTime(buf []byte) (bool, int) {
-    i := len(buf) - 1
-    for ; i >= 0; i-- {
-        if buf[i] < '0' || buf[i] > '9' {
-            break
-        }
-    }
-    return i > 0 && i < len(buf) - 1 && (buf[i] == ' ' || buf[i] == '\t' || buf[i] == 0), i
-}
-
-func LineToNano(line []byte, precision string) []byte {
-    line = bytes.TrimRight(line, " \t\r\n")
-    if precision != "ns" {
-        if found, pos := ScanTime(line); found {
-            if precision == "u" {
-                return append(line, []byte("000")...)
-            } else if precision == "ms" {
-                return append(line, []byte("000000")...)
-            } else if precision == "s" {
-                return append(line, []byte("000000000")...)
-            } else {
-                mul := models.GetPrecisionMultiplier(precision)
-                nano := BytesToInt64(line[pos+1:]) * mul
-                bytenano := Int64ToBytes(nano)
-                return bytes.Join([][]byte{line[:pos], bytenano}, []byte(" "))
-            }
-        }
-    }
-    return line
-}
-
-// faster than bytes.TrimRight, not sure why.
-func TrimRight(p []byte, s []byte) (r []byte) {
-    r = p
-    if len(r) == 0 {
-        return
-    }
-
-    i := len(r) - 1
-    for ; bytes.IndexByte(s, r[i]) != -1; i-- {
-    }
-    return r[0 : i+1]
-}
 
 type InfluxCluster struct {
     lock           sync.RWMutex

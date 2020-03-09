@@ -12,10 +12,6 @@ import (
     "time"
 )
 
-const (
-    WRITE_QUEUE = 16
-)
-
 type Backends struct {
     *HttpBackend
     fb              *FileBackend
