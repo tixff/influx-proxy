@@ -5,7 +5,7 @@
 package backend
 
 var (
-    ForbidCmds   = []string{"(?i:^\\s*grant|^\\s*revoke|\\(\\)\\$)"}
+    ForbidCmds   = []string{"(?i:^grant|^revoke|^select.+into.+from)"}
     SupportCmds  = []string{"(?i:from|^drop\\s+measurement)"}
     ExecutorCmds = []string{
         "(?i:^show\\s+measurements|^show\\s+series|^show\\s+databases$)",

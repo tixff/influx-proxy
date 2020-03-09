@@ -256,6 +256,16 @@ func TestInfluxdbClusterQuery(t *testing.T) {
         {
             name:  "cpu.load_with_host2",
             query: " select cpu_load from \"cpu.load\" WHERE host =~ /^()$/",
+            want:  200,
+        },
+        {
+            name:  "cpu.load_into_from",
+            query: "select * into \"cpu.load_new\" from \"cpu.load\"",
+            want:  400,
+        },
+        {
+            name:  "cpu.load_into_from_group_by",
+            query: "select * into \"cpu.load_new\" from \"cpu.load\" GROUP BY *",
             want:  400,
         },
         {
