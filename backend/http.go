@@ -140,7 +140,7 @@ func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status 
     }
     req.Form.Set("db", hb.DB)
     req.ContentLength = 0
-    if hb.Username != "" {
+    if hb.Username != "" || hb.Password != "" {
         req.Form.Set("u", hb.Username)
         req.Form.Set("p", hb.Password)
     }
@@ -189,7 +189,7 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
     }
     req.Form.Set("db", hb.DB)
     req.ContentLength = 0
-    if hb.Username != "" {
+    if hb.Username != "" || hb.Password != "" {
         req.Form.Set("u", hb.Username)
         req.Form.Set("p", hb.Password)
     }
@@ -244,7 +244,7 @@ func (hb *HttpBackend) WriteCompressed(p []byte) (err error) {
 func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error) {
     q := url.Values{}
     q.Set("db", hb.DB)
-    if hb.Username != "" {
+    if hb.Username != "" || hb.Password != "" {
         q.Set("u", hb.Username)
         q.Set("p", hb.Password)
     }
