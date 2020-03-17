@@ -50,7 +50,7 @@ func (hs *HttpService) checkAuth(req *http.Request) bool {
 }
 
 func (hs *HttpService) checkDatabase(q string) bool {
-    q = strings.ToLower(q)
+    q = strings.ToLower(strings.TrimSpace(q))
     return (strings.HasPrefix(q, "show") && strings.Contains(q, "databases")) || (strings.HasPrefix(q, "create") && strings.Contains(q, "database"))
 }
 
@@ -84,7 +84,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
         return
     }
 
-    q := strings.TrimSpace(req.FormValue("q"))
+    q := req.FormValue("q")
     db := req.FormValue("db")
     if hs.db != "" && !hs.checkDatabase(q) && db != hs.db {
         w.WriteHeader(404)

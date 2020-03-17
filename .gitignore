@@ -2,5 +2,6 @@
 bin/
 log/
 data/
+test/
 *.dat
 *.rec

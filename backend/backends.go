@@ -152,7 +152,7 @@ func (bs *Backends) Flush() {
         var buf bytes.Buffer
         err := Compress(&buf, p)
         if err != nil {
-            log.Printf("write file error: %s\n", err)
+            log.Printf("compress error: %s", err)
             return
         }
 

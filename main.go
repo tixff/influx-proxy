@@ -97,7 +97,6 @@ func main() {
     mux := http.NewServeMux()
     service.NewHttpService(ic, &nodecfg).Register(mux)
 
-    log.Printf("http service start")
     server := &http.Server{
         Addr:        nodecfg.ListenAddr,
         Handler:     mux,
@@ -107,8 +106,10 @@ func main() {
         server.IdleTimeout = 10 * time.Second
     }
     if nodecfg.HTTPSEnabled {
+        log.Printf("https service start, listen on %s", server.Addr)
         err = server.ListenAndServeTLS(nodecfg.HTTPSCert, nodecfg.HTTPSKey)
     } else {
+        log.Printf("http service start, listen on %s", server.Addr)
         err = server.ListenAndServe()
     }
     if err != nil {

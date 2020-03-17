@@ -62,7 +62,7 @@ func (fb *FileBackend) Write(p []byte) (err error) {
     fb.lock.Lock()
     defer fb.lock.Unlock()
 
-    var length uint32 = uint32(len(p))
+    var length = uint32(len(p))
     err = binary.Write(fb.producer, binary.BigEndian, length)
     if err != nil {
         log.Print("write length error: ", err)
@@ -207,7 +207,7 @@ func (fb *FileBackend) RollbackMeta() (err error) {
 
     var off int64
     err = binary.Read(fb.meta, binary.BigEndian, &off)
-    if err != nil {
+    if err != nil && err != io.EOF {
         log.Print("read meta error: ", err)
         return
     }
