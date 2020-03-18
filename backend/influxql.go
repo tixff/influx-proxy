@@ -133,7 +133,7 @@ func GetMeasurementFromInfluxQL(q string) (m string, err error) {
 
     for i := 0; i < len(tokens); i++ {
         // fmt.Printf("%v\n", tokens[i])
-        if strings.ToLower(tokens[i]) == "from" || strings.ToLower(tokens[i]) == "measurement" {
+        if strings.ToLower(tokens[i]) == "from" {
             if i+1 < len(tokens) {
                 m = getMeasurement(tokens[i+1:])
                 return

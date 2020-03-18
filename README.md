@@ -144,15 +144,18 @@ Query Commands
 
 The following commands are forbid.
 
+* `DELETE`
+* `DROP`
 * `GRANT`
 * `REVOKE`
+* `SELECT INTO`
 
 #### Supported commands
 
 Only support match the following commands.
 
-* `.* from .*`
-* `drop measurement`
+* `select from`
+* `show from`
 * `show measurements`
 * `show series`
 * `show field keys`
