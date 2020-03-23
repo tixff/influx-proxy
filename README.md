@@ -128,8 +128,8 @@ The configurations in `proxy.json` are the following:
 * `password`: proxy password
 * `datadir`: data dir to save .dat .rec, default is data
 * `logpath`: log file path, default "" for stdout
-* `interval`: interval to collect statistics
-* `idletimeout`: keep-alives wait time
+* `idletimeout`: keep-alives wait time, default is 10000ms
+* `statinterval`: interval to collect statistics, default is 10000ms
 * `writetracing`: enable logging for the write, default is false
 * `querytracing`: enable logging for the query, default is false
 * `httpsenabled`: enable https, default is false

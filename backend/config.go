@@ -25,8 +25,8 @@ var (
 // password: proxy password
 // datadir: data dir to save .dat .rec, default is data
 // logpath: log file path, default "" for stdout
-// interval: interval to collect statistics
-// idletimeout: keep-alives wait time
+// idletimeout: keep-alives wait time, default is 10000ms
+// statinterval: interval to collect statistics, default is 10000ms
 // writetracing: enable logging for the write, default is false
 // querytracing: enable logging for the query, default is false
 // httpsenabled: enable https, default is false
@@ -39,8 +39,8 @@ type NodeConfig struct {
     Password     string
     DataDir      string
     LogPath      string
-    Interval     int
     IdleTimeout  int
+    StatInterval int
     WriteTracing bool
     QueryTracing bool
     HTTPSEnabled bool
@@ -110,11 +110,11 @@ func (fcs *FileConfigSource) LoadNode() (nodecfg NodeConfig) {
     if nodecfg.DataDir == "" {
         nodecfg.DataDir = "data"
     }
-    if nodecfg.Interval == 0 {
-        nodecfg.Interval = 10
-    }
     if nodecfg.IdleTimeout == 0 {
-        nodecfg.IdleTimeout = 10
+        nodecfg.IdleTimeout = 10000
+    }
+    if nodecfg.StatInterval == 0 {
+        nodecfg.StatInterval = 10000
     }
     return
 }

@@ -67,7 +67,7 @@ func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig) (ic *Influx
         cfgsrc:         cfgsrc,
         stats:          &Statistics{},
         counter:        &Statistics{},
-        ticker:         time.NewTicker(time.Second * time.Duration(nodecfg.Interval)),
+        ticker:         time.NewTicker(time.Millisecond * time.Duration(nodecfg.StatInterval)),
         defaultTags:    map[string]string{"addr": nodecfg.ListenAddr},
         datadir:        nodecfg.DataDir,
         WriteTracing:   nodecfg.WriteTracing,

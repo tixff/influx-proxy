@@ -100,7 +100,7 @@ func main() {
     server := &http.Server{
         Addr:        nodecfg.ListenAddr,
         Handler:     mux,
-        IdleTimeout: time.Duration(nodecfg.IdleTimeout) * time.Second,
+        IdleTimeout: time.Millisecond * time.Duration(nodecfg.IdleTimeout),
     }
     if nodecfg.HTTPSEnabled {
         log.Printf("https service start, listen on %s", server.Addr)
