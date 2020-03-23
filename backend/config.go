@@ -23,12 +23,12 @@ var (
 // db: proxy db, client's db must be same with it
 // username: proxy username
 // password: proxy password
-// interval: collect Statistics
-// idletimeout: keep-alives wait time
-// writetracing: enable logging for the write, default is 0
-// querytracing: enable logging for the query, default is 0
 // datadir: data dir to save .dat .rec, default is data
 // logpath: log file path, default "" for stdout
+// interval: interval to collect statistics
+// idletimeout: keep-alives wait time
+// writetracing: enable logging for the write, default is false
+// querytracing: enable logging for the query, default is false
 // httpsenabled: enable https, default is false
 // httpscert: the ssl certificate to use when https is enabled
 // httpskey: use a separate private key location
@@ -37,12 +37,12 @@ type NodeConfig struct {
     DB           string
     Username     string
     Password     string
-    Interval     int
-    IdleTimeout  int
-    WriteTracing int
-    QueryTracing int
     DataDir      string
     LogPath      string
+    Interval     int
+    IdleTimeout  int
+    WriteTracing bool
+    QueryTracing bool
     HTTPSEnabled bool
     HTTPSCert    string
     HTTPSKey     string
@@ -57,7 +57,7 @@ type NodeConfig struct {
 // maxrowlimit: default config is 10000, wait 10000 points write
 // checkinterval: default config is 1000ms, check backend active every 1 second
 // rewriteinterval: default config is 10000ms, rewrite every 10 seconds
-// writeonly: default 0
+// writeonly: default is false
 type BackendConfig struct {
     URL             string
     DB              string
@@ -68,7 +68,7 @@ type BackendConfig struct {
     MaxRowLimit     int
     CheckInterval   int
     RewriteInterval int
-    WriteOnly       int
+    WriteOnly       bool
 }
 
 // KEYMAPS

@@ -49,7 +49,7 @@ type HttpBackend struct {
     Password  string
     Active    bool
     running   bool
-    WriteOnly int
+    WriteOnly bool
 }
 
 // TODO: query timeout? use req.Cancel
@@ -89,10 +89,7 @@ func (hb *HttpBackend) CheckActive() {
 }
 
 func (hb *HttpBackend) IsWriteOnly() bool {
-    if hb.WriteOnly == 0 {
-        return false
-    }
-    return true
+    return hb.WriteOnly
 }
 
 func (hb *HttpBackend) IsActive() bool {

@@ -87,7 +87,7 @@ func CreateTestInfluxCluster() (ic *InfluxCluster, err error) {
     cfg, _ = CreateTestBackendConfig("test2")
     bkcfgs["test2"] = cfg
     cfg, _ = CreateTestBackendConfig("write_only")
-    cfg.WriteOnly = 1
+    cfg.WriteOnly = true
     bkcfgs["write_only"] = cfg
     for name, cfg := range bkcfgs {
         backends[name], err = NewBackends(cfg, name, ic.datadir)
