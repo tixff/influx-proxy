@@ -12,63 +12,63 @@ import (
 )
 
 const (
-    VERSION = "1.3.4"
+    VERSION = "1.4.0"
 )
 
 var (
     ErrIllegalConfig = errors.New("illegal config")
 )
 
-// listenaddr: proxy listen addr
+// listen_addr: proxy listen addr
 // db: proxy db, client's db must be same with it
 // username: proxy username
 // password: proxy password
-// datadir: data dir to save .dat .rec, default is data
-// logpath: log file path, default "" for stdout
-// idletimeout: keep-alives wait time, default is 10000ms
-// statinterval: interval to collect statistics, default is 10000ms
-// writetracing: enable logging for the write, default is false
-// querytracing: enable logging for the query, default is false
-// httpsenabled: enable https, default is false
-// httpscert: the ssl certificate to use when https is enabled
-// httpskey: use a separate private key location
+// data_dir: data dir to save .dat .rec, default is data
+// log_path: log file path, default "" for stdout
+// idle_timeout: keep-alives wait time, default is 10000ms
+// stat_interval: interval to collect statistics, default is 10000ms
+// write_tracing: enable logging for the write, default is false
+// query_tracing: enable logging for the query, default is false
+// https_enabled: enable https, default is false
+// https_cert: the ssl certificate to use when https is enabled
+// https_key: use a separate private key location
 type NodeConfig struct {
-    ListenAddr   string
-    DB           string
-    Username     string
-    Password     string
-    DataDir      string
-    LogPath      string
-    IdleTimeout  int
-    StatInterval int
-    WriteTracing bool
-    QueryTracing bool
-    HTTPSEnabled bool
-    HTTPSCert    string
-    HTTPSKey     string
+    ListenAddr   string         `json:"listen_addr"`
+    DB           string         `json:"db"`
+    Username     string         `json:"username"`
+    Password     string         `json:"password"`
+    DataDir      string         `json:"data_dir"`
+    LogPath      string         `json:"log_path"`
+    IdleTimeout  int            `json:"idle_timeout"`
+    StatInterval int            `json:"stat_interval"`
+    WriteTracing bool           `json:"write_tracing"`
+    QueryTracing bool           `json:"query_tracing"`
+    HTTPSEnabled bool           `json:"https_enabled"`
+    HTTPSCert    string         `json:"https_cert"`
+    HTTPSKey     string         `json:"https_key"`
 }
 
 // url: influxdb addr or other http backend which supports influxdb line protocol
 // db: influxdb db
 // username: influxdb username
 // password: influxdb password
-// flushsize: default config is 10000, wait 10000 points write
-// flushtime: default config is 1000ms, wait 1 second write whether point count has bigger than flushsize config
+// flush_size: default config is 10000, wait 10000 points write
+// flush_time: default config is 1000ms, wait 1 second write whether point count has bigger than flush_size config
 // timeout: default config is 10000ms, write timeout until 10 seconds
-// checkinterval: default config is 1000ms, check backend active every 1 second
-// rewriteinterval: default config is 10000ms, rewrite every 10 seconds
-// writeonly: default is false
+// check_interval: default config is 1000ms, check backend active every 1 second
+// rewrite_interval: default config is 10000ms, rewrite every 10 seconds
+// write_only: default is false
 type BackendConfig struct {
-    URL             string
-    DB              string
-    Username        string
-    Password        string
-    FlushSize       int
-    FlushTime       int
-    Timeout         int
-    CheckInterval   int
-    RewriteInterval int
-    WriteOnly       bool
+    URL             string      `json:"url"`
+    DB              string      `json:"db"`
+    Username        string      `json:"username"`
+    Password        string      `json:"password"`
+    FlushSize       int         `json:"flush_size"`
+    FlushTime       int         `json:"flush_time"`
+    Timeout         int         `json:"timeout"`
+    CheckInterval   int         `json:"check_interval"`
+    RewriteInterval int         `json:"rewrite_interval"`
+    WriteOnly       bool        `json:"write_only"`
 }
 
 // KEYMAPS

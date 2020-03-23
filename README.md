@@ -107,12 +107,12 @@ The configurations in `proxy.json` are the following:
 * `db`: influxdb db
 * `username`: influxdb username
 * `password`: influxdb password
-* `flushsize`: default config is 10000, wait 10000 points write
-* `flushtime`: default config is 1000ms, wait 1 second write whether point count has bigger than flushsize config
+* `flush_size`: default config is 10000, wait 10000 points write
+* `flush_time`: default config is 1000ms, wait 1 second write whether point count has bigger than flush_size config
 * `timeout`: default config is 10000ms, write timeout until 10 seconds
-* `checkinterval`: default config is 1000ms, check backend active every 1 second
-* `rewriteinterval`: default config is 10000ms, rewrite every 10 seconds
-* `writeonly`: default is false
+* `check_interval`: default config is 1000ms, check backend active every 1 second
+* `rewrite_interval`: default config is 10000ms, rewrite every 10 seconds
+* `write_only`: default is false
 
 #### KEYMAPS
 
@@ -122,19 +122,19 @@ The configurations in `proxy.json` are the following:
 
 #### NODE
 
-* `listenaddr`: proxy listen addr
+* `listen_addr`: proxy listen addr
 * `db`: proxy db, client's db must be same with it
 * `username`: proxy username
 * `password`: proxy password
-* `datadir`: data dir to save .dat .rec, default is data
-* `logpath`: log file path, default "" for stdout
-* `idletimeout`: keep-alives wait time, default is 10000ms
-* `statinterval`: interval to collect statistics, default is 10000ms
-* `writetracing`: enable logging for the write, default is false
-* `querytracing`: enable logging for the query, default is false
-* `httpsenabled`: enable https, default is false
-* `httpscert`: the ssl certificate to use when https is enabled
-* `httpskey`: use a separate private key location
+* `data_dir`: data dir to save .dat .rec, default is data
+* `log_path`: log file path, default "" for stdout
+* `idle_timeout`: keep-alives wait time, default is 10000ms
+* `stat_interval`: interval to collect statistics, default is 10000ms
+* `write_tracing`: enable logging for the write, default is false
+* `query_tracing`: enable logging for the query, default is false
+* `https_enabled`: enable https, default is false
+* `https_cert`: the ssl certificate to use when https is enabled
+* `https_key`: use a separate private key location
 
 Query Commands
 --------

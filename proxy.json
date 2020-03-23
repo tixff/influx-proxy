@@ -5,22 +5,22 @@
             "db": "test",
             "username": "",
             "password": "",
-            "flushsize": 10000,
-            "flushtime": 1000,
+            "flush_size": 10000,
+            "flush_time": 1000,
             "timeout": 10000,
-            "checkinterval": 1000,
-            "rewriteinterval": 10000
+            "check_interval": 1000,
+            "rewrite_interval": 10000
         },
         "influxdb-2": {
             "url": "http://influxdb-2:8086",
             "db": "test",
             "username": "",
             "password": "",
-            "flushsize": 10000,
-            "flushtime": 1000,
+            "flush_size": 10000,
+            "flush_time": 1000,
             "timeout": 10000,
-            "checkinterval": 1000,
-            "rewriteinterval": 10000
+            "check_interval": 1000,
+            "rewrite_interval": 10000
         }
     },
     "KEYMAPS": {
@@ -29,18 +29,18 @@
         "_default_": ["influxdb-1"]
     },
     "NODE": {
-        "listenaddr": ":7076",
+        "listen_addr": ":7076",
         "db": "test",
         "username": "",
         "password": "",
-        "datadir": "data",
-        "logpath": "",
-        "idletimeout": 10000,
-        "statinterval": 10000,
-        "writetracing": false,
-        "querytracing": false,
-        "httpsenabled": false,
-        "httpscert": "",
-        "httpskey": ""
+        "data_dir": "data",
+        "log_path": "",
+        "idle_timeout": 10000,
+        "stat_interval": 10000,
+        "write_tracing": false,
+        "query_tracing": false,
+        "https_enabled": false,
+        "https_cert": "",
+        "https_key": ""
     }
 }
