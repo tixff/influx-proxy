@@ -52,6 +52,7 @@ type HttpBackend struct {
     WriteOnly int
 }
 
+// TODO: query timeout? use req.Cancel
 func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
     hb = &HttpBackend{
         client: &http.Client{
@@ -63,10 +64,6 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
         transport: &http.Transport{
             TLSClientConfig: &tls.Config{InsecureSkipVerify: strings.HasPrefix(cfg.URL, "https")},
         },
-        // TODO: query timeout? use req.Cancel
-        // client_query: &http.Client{
-        //     Timeout: time.Millisecond * time.Duration(cfg.TimeoutQuery),
-        // },
         Interval:  cfg.CheckInterval,
         URL:       cfg.URL,
         DB:        cfg.DB,

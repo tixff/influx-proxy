@@ -54,7 +54,6 @@ type NodeConfig struct {
 // password: influxdb password
 // interval: default config is 1000ms, wait 1 second write whether point count has bigger than maxrowlimit config
 // timeout: default config is 10000ms, write timeout until 10 seconds
-// timeoutquery: default config is 600000ms, query timeout until 600 seconds
 // maxrowlimit: default config is 10000, wait 10000 points write
 // checkinterval: default config is 1000ms, check backend active every 1 second
 // rewriteinterval: default config is 10000ms, rewrite every 10 seconds
@@ -66,7 +65,6 @@ type BackendConfig struct {
     Password        string
     Interval        int
     Timeout         int
-    TimeoutQuery    int
     MaxRowLimit     int
     CheckInterval   int
     RewriteInterval int
@@ -125,7 +123,6 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
             Password: val.Password,
             Interval: val.Interval,
             Timeout: val.Timeout,
-            TimeoutQuery: val.TimeoutQuery,
             MaxRowLimit: val.MaxRowLimit,
             CheckInterval: val.CheckInterval,
             RewriteInterval: val.RewriteInterval,
@@ -136,9 +133,6 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
         }
         if cfg.Timeout == 0 {
             cfg.Timeout = 10000
-        }
-        if cfg.TimeoutQuery == 0 {
-            cfg.TimeoutQuery = 600000
         }
         if cfg.MaxRowLimit == 0 {
             cfg.MaxRowLimit = 10000

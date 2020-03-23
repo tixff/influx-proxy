@@ -40,7 +40,6 @@ func CreateTestBackendConfig(dbname string) (cfg *BackendConfig, ts *httptest.Se
         DB:              dbname,
         Interval:        200,
         Timeout:         4000,
-        TimeoutQuery:    6000,
         MaxRowLimit:     1000,
         CheckInterval:   1000,
         RewriteInterval: 1000,
