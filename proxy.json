@@ -5,9 +5,9 @@
             "db": "test",
             "username": "",
             "password": "",
-            "interval": 1000,
+            "flushsize": 10000,
+            "flushtime": 1000,
             "timeout": 10000,
-            "maxrowlimit": 10000,
             "checkinterval": 1000,
             "rewriteinterval": 10000
         },
@@ -16,9 +16,9 @@
             "db": "test",
             "username": "",
             "password": "",
-            "interval": 1000,
+            "flushsize": 10000,
+            "flushtime": 1000,
             "timeout": 10000,
-            "maxrowlimit": 10000,
             "checkinterval": 1000,
             "rewriteinterval": 10000
         }

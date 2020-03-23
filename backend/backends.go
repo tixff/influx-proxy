@@ -15,9 +15,9 @@ import (
 type Backends struct {
     *HttpBackend
     fb              *FileBackend
-    Interval        int
+    FlushSize       int32
+    FlushTime       int
     RewriteInterval int
-    MaxRowLimit     int32
 
     running          bool
     ticker           *time.Ticker
@@ -33,13 +33,13 @@ type Backends struct {
 func NewBackends(cfg *BackendConfig, name string, datadir string) (bs *Backends, err error) {
     bs = &Backends{
         HttpBackend: NewHttpBackend(cfg),
-        Interval:        cfg.Interval,
+        FlushSize:       int32(cfg.FlushSize),
+        FlushTime:       cfg.FlushTime,
         RewriteInterval: cfg.RewriteInterval,
         running:         true,
         ticker:          time.NewTicker(time.Millisecond * time.Duration(cfg.RewriteInterval)),
         ch_write:        make(chan []byte, 16),
         rewriter_running: false,
-        MaxRowLimit:      int32(cfg.MaxRowLimit),
     }
     bs.fb, err = NewFileBackend(name, datadir)
     if err != nil {
@@ -121,11 +121,10 @@ func (bs *Backends) WriteBuffer(p []byte) {
     }
 
     switch {
-    case bs.write_counter >= bs.MaxRowLimit:
+    case bs.write_counter >= bs.FlushSize:
         bs.Flush()
     case bs.ch_timer == nil:
-        bs.ch_timer = time.After(
-            time.Millisecond * time.Duration(bs.Interval))
+        bs.ch_timer = time.After(time.Millisecond * time.Duration(bs.FlushTime))
     }
 
     return

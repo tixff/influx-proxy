@@ -78,7 +78,7 @@ func BenchmarkScanKey(b *testing.B) {
 
 func CreateTestInfluxCluster() (ic *InfluxCluster, err error) {
     fileConfig := &FileConfigSource{}
-    nodeConfig := &NodeConfig{DataDir:"../data/test"}
+    nodeConfig := &NodeConfig{DataDir:"../data/test", Interval:10}
     ic = NewInfluxCluster(fileConfig, nodeConfig)
     backends := make(map[string]BackendAPI)
     bkcfgs := make(map[string]*BackendConfig)

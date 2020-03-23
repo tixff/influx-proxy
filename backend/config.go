@@ -52,9 +52,9 @@ type NodeConfig struct {
 // db: influxdb db
 // username: influxdb username
 // password: influxdb password
-// interval: default config is 1000ms, wait 1 second write whether point count has bigger than maxrowlimit config
+// flushsize: default config is 10000, wait 10000 points write
+// flushtime: default config is 1000ms, wait 1 second write whether point count has bigger than flushsize config
 // timeout: default config is 10000ms, write timeout until 10 seconds
-// maxrowlimit: default config is 10000, wait 10000 points write
 // checkinterval: default config is 1000ms, check backend active every 1 second
 // rewriteinterval: default config is 10000ms, rewrite every 10 seconds
 // writeonly: default is false
@@ -63,9 +63,9 @@ type BackendConfig struct {
     DB              string
     Username        string
     Password        string
-    Interval        int
+    FlushSize       int
+    FlushTime       int
     Timeout         int
-    MaxRowLimit     int
     CheckInterval   int
     RewriteInterval int
     WriteOnly       bool
@@ -110,6 +110,12 @@ func (fcs *FileConfigSource) LoadNode() (nodecfg NodeConfig) {
     if nodecfg.DataDir == "" {
         nodecfg.DataDir = "data"
     }
+    if nodecfg.Interval == 0 {
+        nodecfg.Interval = 10
+    }
+    if nodecfg.IdleTimeout == 0 {
+        nodecfg.IdleTimeout = 10
+    }
     return
 }
 
@@ -121,21 +127,21 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
             DB: val.DB,
             Username: val.Username,
             Password: val.Password,
-            Interval: val.Interval,
+            FlushSize: val.FlushSize,
+            FlushTime: val.FlushTime,
             Timeout: val.Timeout,
-            MaxRowLimit: val.MaxRowLimit,
             CheckInterval: val.CheckInterval,
             RewriteInterval: val.RewriteInterval,
             WriteOnly: val.WriteOnly,
         }
-        if cfg.Interval == 0 {
-            cfg.Interval = 1000
+        if cfg.FlushSize == 0 {
+            cfg.FlushSize = 10000
+        }
+        if cfg.FlushTime == 0 {
+            cfg.FlushTime = 1000
         }
         if cfg.Timeout == 0 {
             cfg.Timeout = 10000
-        }
-        if cfg.MaxRowLimit == 0 {
-            cfg.MaxRowLimit = 10000
         }
         if cfg.CheckInterval == 0 {
             cfg.CheckInterval = 1000

@@ -102,9 +102,6 @@ func main() {
         Handler:     mux,
         IdleTimeout: time.Duration(nodecfg.IdleTimeout) * time.Second,
     }
-    if nodecfg.IdleTimeout <= 0 {
-        server.IdleTimeout = 10 * time.Second
-    }
     if nodecfg.HTTPSEnabled {
         log.Printf("https service start, listen on %s", server.Addr)
         err = server.ListenAndServeTLS(nodecfg.HTTPSCert, nodecfg.HTTPSKey)

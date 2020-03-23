@@ -107,9 +107,9 @@ The configurations in `proxy.json` are the following:
 * `db`: influxdb db
 * `username`: influxdb username
 * `password`: influxdb password
-* `interval`: default config is 1000ms, wait 1 second write whether point count has bigger than maxrowlimit config
+* `flushsize`: default config is 10000, wait 10000 points write
+* `flushtime`: default config is 1000ms, wait 1 second write whether point count has bigger than flushsize config
 * `timeout`: default config is 10000ms, write timeout until 10 seconds
-* `maxrowlimit`: default config is 10000, wait 10000 points write
 * `checkinterval`: default config is 1000ms, check backend active every 1 second
 * `rewriteinterval`: default config is 10000ms, rewrite every 10 seconds
 * `writeonly`: default is false

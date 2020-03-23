@@ -38,9 +38,9 @@ func CreateTestBackendConfig(dbname string) (cfg *BackendConfig, ts *httptest.Se
     cfg = &BackendConfig{
         URL:             ts.URL,
         DB:              dbname,
-        Interval:        200,
+        FlushSize:       1000,
+        FlushTime:       200,
         Timeout:         4000,
-        MaxRowLimit:     1000,
         CheckInterval:   1000,
         RewriteInterval: 1000,
     }
