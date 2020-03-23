@@ -6,9 +6,8 @@
 package backend
 
 import (
-    "encoding/json"
-
     "github.com/influxdata/influxdb1-client/models"
+    "github.com/json-iterator/go"
 )
 
 // Message represents a user-facing message to be included with the result.
@@ -38,7 +37,7 @@ type Response struct {
 // TODO: multi queries in q?
 func SeriesFromResponseBytes(b []byte) (series models.Rows, e error) {
     var rsp Response
-    e = json.Unmarshal(b, &rsp)
+    e = jsoniter.Unmarshal(b, &rsp)
     if e == nil && len(rsp.Results) > 0 && len(rsp.Results[0].Series) > 0 {
         series = rsp.Results[0].Series
     }
@@ -52,7 +51,7 @@ func ResponseBytesFromSeries(series models.Rows) (b []byte, e error) {
     rsp := Response{
         Results: []*Result{r},
     }
-    b, e = json.Marshal(rsp)
+    b, e = jsoniter.Marshal(rsp)
     if e != nil {
         return
     }
@@ -68,7 +67,7 @@ func ResponseBytesFromSeriesWithErr(series models.Rows, err string) (b []byte, e
         Results: []*Result{r},
         Err: err,
     }
-    b, e = json.Marshal(rsp)
+    b, e = jsoniter.Marshal(rsp)
     if e != nil {
         return
     }
@@ -78,7 +77,7 @@ func ResponseBytesFromSeriesWithErr(series models.Rows, err string) (b []byte, e
 
 func ResultsFromResponseBytes(b []byte) (results []*Result, e error) {
     var rsp Response
-    e = json.Unmarshal(b, &rsp)
+    e = jsoniter.Unmarshal(b, &rsp)
     if e == nil && len(rsp.Results) > 0 {
         results = rsp.Results
     }
@@ -89,7 +88,7 @@ func ResponseBytesFromResults(results []*Result) (b []byte, e error) {
     rsp := Response{
         Results: results,
     }
-    b, e = json.Marshal(rsp)
+    b, e = jsoniter.Marshal(rsp)
     if e != nil {
         return
     }
@@ -102,7 +101,7 @@ func ResponseBytesFromResultsWithErr(results []*Result, err string) (b []byte, e
         Results: results,
         Err: err,
     }
-    b, e = json.Marshal(rsp)
+    b, e = jsoniter.Marshal(rsp)
     if e != nil {
         return
     }
