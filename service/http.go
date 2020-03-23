@@ -155,7 +155,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
         w.WriteHeader(204)
     }
     if hs.ic.WriteTracing {
-        log.Printf("Write body received by handler: %s, the client is %s\n", p, req.RemoteAddr)
+        log.Printf("write body received by handler: %s, the client is %s\n", p, req.RemoteAddr)
     }
     return
 }

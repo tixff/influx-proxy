@@ -164,15 +164,14 @@ func (bs *Backends) Flush() {
             case nil:
                 return
             case ErrBadRequest:
-                log.Printf("bad request, drop all data.")
+                log.Printf("bad request, drop all data")
                 return
             case ErrNotFound:
-                log.Printf("bad backend, drop all data.")
+                log.Printf("bad backend, drop all data")
                 return
             default:
-                log.Printf("unknown error %s, maybe overloaded.", err)
+                log.Printf("write http error: %s\n", err)
             }
-            log.Printf("write http error: %s\n", err)
         }
 
         err = bs.fb.Write(p)
@@ -227,13 +226,13 @@ func (bs *Backends) Rewrite() (err error) {
     switch err {
     case nil:
     case ErrBadRequest:
-        log.Printf("bad request, drop all data.")
+        log.Printf("bad request, drop all data")
         err = nil
     case ErrNotFound:
-        log.Printf("bad backend, drop all data.")
+        log.Printf("bad backend, drop all data")
         err = nil
     default:
-        log.Printf("unknown error %s, maybe overloaded.", err)
+        log.Printf("rewrite http error: %s\n", err)
 
         err = bs.fb.RollbackMeta()
         if err != nil {

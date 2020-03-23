@@ -19,10 +19,11 @@ import (
 )
 
 var (
-    ErrBadRequest = errors.New("Bad Request")
-    ErrNotFound   = errors.New("Not Found")
-    ErrInternal   = errors.New("Internal Error")
-    ErrUnknown    = errors.New("Unknown Error")
+    ErrBadRequest   = errors.New("bad request")
+    ErrUnauthorized = errors.New("unauthorized")
+    ErrNotFound     = errors.New("not found")
+    ErrInternal     = errors.New("internal error")
+    ErrUnknown      = errors.New("unknown error")
 )
 
 func Compress(buf *bytes.Buffer, p []byte) (err error) {
@@ -259,24 +260,27 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
     if resp.StatusCode == 204 {
         return
     }
-    log.Print("write status code: ", resp.StatusCode)
+    log.Printf("write status code: %d, the backend is %s", resp.StatusCode, hb.URL)
 
     respbuf, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         log.Print("readall error: ", err)
         return
     }
-    log.Printf("error response: %s\n", respbuf)
+    log.Printf("error response: %s", respbuf)
 
     // translate code to error
     // https://docs.influxdata.com/influxdb/v1.1/tools/api/#write
     switch resp.StatusCode {
     case 400:
         err = ErrBadRequest
+    case 401:
+        err = ErrUnauthorized
     case 404:
         err = ErrNotFound
-    default: // mostly tcp connection timeout
-        log.Printf("status: %d", resp.StatusCode)
+    case 500:
+        err = ErrInternal
+    default: // mostly tcp connection timeout, or request entity too large
         err = ErrUnknown
     }
     return
