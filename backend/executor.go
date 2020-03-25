@@ -178,7 +178,7 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte, rerr string) (body 
             series = _series
             for _, value := range _series[0].Values {
                 key := value[0].(string)
-                if !strings.HasPrefix(key, StatisticsMetricName) {
+                if !strings.HasPrefix(key, StatisticsMeasurementName) {
                     valuesMap[key] = value
                 }
             }
@@ -204,7 +204,7 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte, rerr string) (body 
             return
         }
         for _, serie := range _series {
-            if serie.Name != StatisticsMetricName {
+            if serie.Name != StatisticsMeasurementName {
                 seriesMap[serie.Name] = serie
             }
         }

@@ -28,7 +28,7 @@ var (
     ErrNotClusterQuery = errors.New("not a cluster query")
 )
 
-var StatisticsMetricName = "influxdb.cluster.statistics"
+var StatisticsMeasurementName = "influx.proxy.statistics"
 
 type InfluxCluster struct {
     lock           sync.RWMutex
@@ -118,7 +118,7 @@ func (ic *InfluxCluster) Flush() {
 
 func (ic *InfluxCluster) WriteStatistics() (err error) {
     metric := &monitor.Metric{
-        Name: StatisticsMetricName,
+        Name: StatisticsMeasurementName,
         Tags: ic.defaultTags,
         Fields: map[string]interface{}{
             "statQueryRequest":         ic.counter.QueryRequests,
