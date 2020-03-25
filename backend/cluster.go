@@ -418,6 +418,12 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
         return
     }
 
+    if ScanSpace(line[len(key):]) != 2 {
+        log.Printf("invalid format, drop data: %s", string(line))
+        atomic.AddInt64(&ic.stats.PointsWrittenFail, 1)
+        return
+    }
+
     bs, ok := ic.GetBackends(key)
     if !ok {
         log.Printf("new measurement: %s\n", key)
