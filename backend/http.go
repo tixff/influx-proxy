@@ -79,7 +79,6 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
 }
 
 // TODO: update active when calling successed or failed.
-
 func (hb *HttpBackend) CheckActive() {
     var err error
     for hb.running {

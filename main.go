@@ -5,7 +5,6 @@
 package main
 
 import (
-    "errors"
     "flag"
     "fmt"
     "log"
@@ -20,7 +19,6 @@ import (
 )
 
 var (
-    ErrConfig   = errors.New("config parse error")
     ConfigFile  string
     Version     bool
     GitCommit   string
@@ -83,7 +81,7 @@ func main() {
 
     fcs, err := backend.NewFileConfigSource(ConfigFile)
     if err != nil {
-        fmt.Println("config source load failed")
+        fmt.Println("config file load failed")
         return
     }
     nodecfg := fcs.LoadNode()

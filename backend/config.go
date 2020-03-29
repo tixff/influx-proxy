@@ -6,17 +6,12 @@ package backend
 
 import (
     "encoding/json"
-    "errors"
     "log"
     "os"
 )
 
 const (
     VERSION = "1.4.0"
-)
-
-var (
-    ErrIllegalConfig = errors.New("illegal config")
 )
 
 // listen_addr: proxy listen addr

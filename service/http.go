@@ -88,7 +88,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
     db := req.FormValue("db")
     if hs.db != "" && !hs.checkDatabase(q) && db != hs.db {
         w.WriteHeader(404)
-        w.Write([]byte("database not exist\n"))
+        w.Write([]byte("database forbidden\n"))
         return
     }
 
@@ -123,7 +123,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
     db := req.URL.Query().Get("db")
     if hs.db != "" && db != hs.db {
         w.WriteHeader(404)
-        w.Write([]byte("database not exist\n"))
+        w.Write([]byte("database forbidden\n"))
         return
     }
 
