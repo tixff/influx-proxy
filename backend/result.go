@@ -34,6 +34,16 @@ type Response struct {
     Err     string    `json:"error,omitempty"`
 }
 
+func (rsp *Response) Marshal(indent bool) (b []byte) {
+    if indent {
+        b, _ = jsoniter.MarshalIndent(rsp, "", "    ")
+    } else {
+        b, _ = jsoniter.Marshal(rsp)
+    }
+    b = append(b, '\n')
+    return
+}
+
 // TODO: multi queries in q?
 func SeriesFromResponseBytes(b []byte) (series models.Rows, e error) {
     var rsp Response
@@ -41,37 +51,6 @@ func SeriesFromResponseBytes(b []byte) (series models.Rows, e error) {
     if e == nil && len(rsp.Results) > 0 && len(rsp.Results[0].Series) > 0 {
         series = rsp.Results[0].Series
     }
-    return
-}
-
-func ResponseBytesFromSeries(series models.Rows) (b []byte, e error) {
-    r := &Result{
-        Series: series,
-    }
-    rsp := Response{
-        Results: []*Result{r},
-    }
-    b, e = jsoniter.Marshal(rsp)
-    if e != nil {
-        return
-    }
-    b = append(b, '\n')
-    return
-}
-
-func ResponseBytesFromSeriesWithErr(series models.Rows, err string) (b []byte, e error) {
-    r := &Result{
-        Series: series,
-    }
-    rsp := Response{
-        Results: []*Result{r},
-        Err: err,
-    }
-    b, e = jsoniter.Marshal(rsp)
-    if e != nil {
-        return
-    }
-    b = append(b, '\n')
     return
 }
 
@@ -84,27 +63,19 @@ func ResultsFromResponseBytes(b []byte) (results []*Result, e error) {
     return
 }
 
-func ResponseBytesFromResults(results []*Result) (b []byte, e error) {
-    rsp := Response{
-        Results: results,
+func ResponseFromSeries(series models.Rows) (rsp *Response) {
+    r := &Result{
+        Series: series,
     }
-    b, e = jsoniter.Marshal(rsp)
-    if e != nil {
-        return
+    rsp = &Response{
+        Results: []*Result{r},
     }
-    b = append(b, '\n')
     return
 }
 
-func ResponseBytesFromResultsWithErr(results []*Result, err string) (b []byte, e error) {
-    rsp := Response{
+func ResponseFromResults(results []*Result) (rsp *Response) {
+    rsp = &Response{
         Results: results,
-        Err: err,
     }
-    b, e = jsoniter.Marshal(rsp)
-    if e != nil {
-        return
-    }
-    b = append(b, '\n')
     return
 }

@@ -23,12 +23,12 @@ func HandlerAny(w http.ResponseWriter, req *http.Request) {
         w.WriteHeader(http.StatusNoContent)
     } else {
         w.WriteHeader(http.StatusOK)
-        rb, _ := ResponseBytesFromSeries(models.Rows{{
+        rsp := ResponseFromSeries(models.Rows{{
             Name: "test",
             Columns: []string{"name"},
             Values: [][]interface{}{{"value"}},
         }})
-        w.Write(rb)
+        w.Write(rsp.Marshal(false))
     }
     return
 }
