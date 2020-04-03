@@ -235,7 +235,7 @@ func LineToNano(line []byte, precision string) []byte {
     line = bytes.TrimRight(line, " \t\r\n")
     pos, found := ScanTime(line)
     if found {
-        if precision == "ns" {
+        if precision == "ns" || precision == "n" {
             return line
         } else if precision == "u" {
             return append(line, []byte("000")...)
