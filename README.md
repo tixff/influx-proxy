@@ -3,7 +3,7 @@ InfluxDB Proxy
 
 This project adds a basic high availability layer to InfluxDB.
 
-NOTE: influx-proxy must be built with Go 1.7+, don't implement udp.
+NOTE: influx-proxy must be built with Go 1.8+, don't implement udp.
 
 Why
 ---
@@ -12,21 +12,29 @@ We used [InfluxDB Relay](https://github.com/influxdata/influxdb-relay) before, b
 We use grafana for visualizing time series data, so we need add datasource for grafana. We need change the datasource config when influxdb is down.
 We need transfer data across idc, but Relay doesn't support gzip.
 It's inconvenient to analyse data with connecting different influxdb.
-Therefore, we made InfluxDB Proxy.
+Therefore, we made [InfluxDB Proxy](https://github.com/shell909090/influx-proxy). More details please visit [https://github.com/shell909090/influx-proxy](https://github.com/shell909090/influx-proxy).
+
+Forked from the above InfluxDB Proxy, after many improvements and optimizations, [InfluxDB Proxy v1](https://github.com/chengshiwen/influx-proxy/tree/branch-1.x) has released, which no longer depends on python and redis, and supports more features.
 
 Features
 --------
 
 * Support gzip.
 * Support query.
+* Support some cluster influxql.
 * Filter some dangerous influxql.
 * Transparent for client, like cluster for client.
 * Cache data to file when write failed, then rewrite.
+* Load config file and no longer depend on python and redis.
+* Support precision query parameter when writing data.
+* Support influxdb-java, influxdb shell and grafana.
+* Support authentication and https.
+* Support version display.
 
 Requirements
 -----------
 
-* Golang >= 1.7
+* Golang >= 1.8
 
 Usage
 ------------
@@ -34,10 +42,11 @@ Usage
 #### Quickstart
 
 ```sh
-$ # Install influx-proxy to your $GOPATH/bin
 $ go get -u github.com/chengshiwen/influx-proxy
-$ # Start influx-proxy!
-$ $GOPATH/bin/influx-proxy -config proxy.json
+$ cd $GOPATH/src/github.com/chengshiwen/influx-proxy
+$ git checkout branch-1.x
+$ make
+$ ./bin/influx-proxy -config proxy.json
 ```
 
 #### Build Release
