@@ -93,16 +93,15 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
             continue
         }
         req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
-        _header, _status, _body, _err := api.QueryResp(req)
+        _header, _status, _body, err := api.QueryResp(req)
         if _status >= http.StatusBadRequest {
             copyHeader(w.Header(), _header)
             w.WriteHeader(_status)
             w.Write(_body)
-            return
+            return nil
         }
-        if _err != nil {
-            err = _err
-            return
+        if err != nil {
+            return err
         }
         header = _header
         status = _status
@@ -157,10 +156,9 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
             } else {
                 req.Form.Set("q", "create database " + hb.DB)
             }
-            _header, _, _, _err := api.QueryResp(req)
-            if _err != nil {
-                err = _err
-                return
+            _header, _, _, err := api.QueryResp(req)
+            if err != nil {
+                return err
             }
             header = _header
         }
@@ -192,9 +190,9 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
                 continue
             }
             req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
-            _header, _, _, _err := api.QueryResp(req)
-            if _err != nil {
-                return _err
+            _header, _, _, err := api.QueryResp(req)
+            if err != nil {
+                return err
             }
             header = _header
         }
@@ -211,10 +209,9 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte) (rsp *Response, err
     var values [][]interface{}
     valuesMap := make(map[string][]interface{})
     for _, b := range bodies {
-        _series, _err := SeriesFromResponseBytes(b)
-        if _err != nil {
-            err = _err
-            return
+        _series, err := SeriesFromResponseBytes(b)
+        if err != nil {
+            return nil, err
         }
         if len(_series) == 1 {
             series = _series
@@ -239,10 +236,9 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte) (rsp *Response, err
     var series models.Rows
     seriesMap := make(map[string]*models.Row)
     for _, b := range bodies {
-        _series, _err := SeriesFromResponseBytes(b)
-        if _err != nil {
-            err = _err
-            return
+        _series, err := SeriesFromResponseBytes(b)
+        if err != nil {
+            return nil, err
         }
         for _, serie := range _series {
             if serie.Name != StatisticsMeasurementName {
@@ -260,10 +256,9 @@ func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rsp *Response, err
     var series models.Rows
     var values [][]interface{}
     for _, b := range bodies {
-        _series, _err := SeriesFromResponseBytes(b)
-        if _err != nil {
-            err = _err
-            return
+        _series, err := SeriesFromResponseBytes(b)
+        if err != nil {
+            return nil, err
         }
         if len(_series) == 1 {
             series = _series
@@ -281,10 +276,9 @@ func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rsp *Response, err
 func (iqe *InfluxQLExecutor) concatByResults(bodies [][]byte) (rsp *Response, err error) {
     var results []*Result
     for _, b := range bodies {
-        _results, _err := ResultsFromResponseBytes(b)
-        if _err != nil {
-            err = _err
-            return
+        _results, err := ResultsFromResponseBytes(b)
+        if err != nil {
+            return nil, err
         }
         if len(_results) == 1 {
             results = append(results, _results[0])
