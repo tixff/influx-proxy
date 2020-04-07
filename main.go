@@ -46,7 +46,7 @@ func initLog(logPath string) {
 }
 
 func createDataDir(dataDir string)  {
-    exist, err := pathExists(dataDir)
+    exist, err := pathExist(dataDir)
     if err != nil {
         log.Fatalln("check data dir error")
     }
@@ -58,7 +58,7 @@ func createDataDir(dataDir string)  {
     }
 }
 
-func pathExists(path string) (bool, error) {
+func pathExist(path string) (bool, error) {
     _, err := os.Stat(path)
     if err == nil {
         return true, nil
