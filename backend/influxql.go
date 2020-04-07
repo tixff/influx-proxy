@@ -99,6 +99,13 @@ func ScanToken(data []byte, atEOF bool) (advance int, token []byte, err error) {
         } else {
             advance += start + 1
         }
+    case '.':
+        advance = start + 1
+        for ; advance < len(data); advance++ {
+            if data[advance] != '.' {
+                break
+            }
+        }
     default:
         advance = bytes.IndexFunc(data[start:], func(r rune) bool {
             return r == ' '
@@ -120,36 +127,80 @@ func ScanToken(data []byte, atEOF bool) (advance int, token []byte, err error) {
     return
 }
 
-func GetMeasurementFromInfluxQL(q string) (m string, err error) {
+func ScanTokens(q string, n int) (tokens []string) {
+    q = strings.TrimRight(q, ";")
     buf := bytes.NewBuffer([]byte(q))
     scanner := bufio.NewScanner(buf)
     scanner.Buffer([]byte(q), len(q))
     scanner.Split(ScanToken)
-    var tokens []string
     for scanner.Scan() {
         tokens = append(tokens, scanner.Text())
+        if n > 0 && len(tokens) == n {
+            return
+        }
     }
-    // fmt.Printf("%v\n", tokens)
+    return
+}
 
+func GetDatabaseFromInfluxQL(q string) (m string, err error) {
+    return GetDatabaseFromTokens(ScanTokens(q, 0))
+}
+
+func GetMeasurementFromInfluxQL(q string) (m string, err error) {
+    return GetMeasurementFromTokens(ScanTokens(q, 0))
+}
+
+func GetDatabaseFromTokens(tokens []string) (m string, err error) {
+    return GetIdentifierFromTokens(tokens, []string{"on", "database"}, getDatabase)
+}
+
+func GetMeasurementFromTokens(tokens []string) (m string, err error) {
+    return GetIdentifierFromTokens(tokens, []string{"from", "measurement"}, getMeasurement)
+}
+
+func GetIdentifierFromTokens(tokens []string, keywords []string, fn func([]string) string) (m string, err error) {
     for i := 0; i < len(tokens); i++ {
-        // fmt.Printf("%v\n", tokens[i])
-        if strings.ToLower(tokens[i]) == "from" {
-            if i+1 < len(tokens) {
-                m = getMeasurement(tokens[i+1:])
-                return
+        for j := 0; j < len(keywords); j++ {
+            if strings.ToLower(tokens[i]) == keywords[j] {
+                if i+1 < len(tokens) {
+                    m = fn(tokens[i+1:])
+                    return
+                }
             }
         }
     }
-
     return "", ErrIllegalQL
 }
 
+func getDatabase(tokens []string) (m string) {
+    m = tokens[0]
+    if m[0] == '"' || m[0] == '\'' {
+        m = m[1: len(m)-1]
+        return
+    }
+
+    index := strings.IndexByte(m, '.')
+    if index == -1 {
+        return
+    }
+
+    m = m[:index]
+    return
+}
+
 func getMeasurement(tokens []string) (m string) {
-    if len(tokens) >= 2 && strings.HasPrefix(tokens[1], ".") {
-        m = tokens[1]
-        m = m[1:]
+    if len(tokens) >= 3 && (tokens[1] == "." || tokens[1] == "..") {
+        if len(tokens) > 3 && tokens[1] == "." {
+            if len(tokens) >= 5 && tokens[3] == "." {
+                m = tokens[4]
+            } else {
+                m = tokens[0]
+            }
+        } else {
+            m = tokens[2]
+        }
         if m[0] == '"' || m[0] == '\'' {
-            m = m[1 : len(m)-1]
+            m = m[1: len(m)-1]
         }
         return
     }
@@ -160,7 +211,7 @@ func getMeasurement(tokens []string) (m string) {
     }
 
     if m[0] == '"' || m[0] == '\'' {
-        m = m[1 : len(m)-1]
+        m = m[1: len(m)-1]
         return
     }
 
@@ -171,14 +222,13 @@ func getMeasurement(tokens []string) (m string) {
 
     m = m[index+1:]
     if m[0] == '"' || m[0] == '\'' {
-        m = m[1 : len(m)-1]
+        m = m[1: len(m)-1]
     }
     return
 }
 
 func ScanKey(pointbuf []byte) (key string, err error) {
-    var keybuf [100]byte
-    keyslice := keybuf[0:0]
+    keyslice := make([]byte, 0)
     buflen := len(pointbuf)
     for i := 0; i < buflen; i++ {
         c := pointbuf[i]
@@ -265,17 +315,4 @@ func BytesToInt64(buf []byte) int64 {
         res = res * 10 + int64(buf[i]-'0')
     }
     return res
-}
-
-// faster than bytes.TrimRight, not sure why.
-func TrimRight(p []byte, s []byte) (r []byte) {
-    r = p
-    if len(r) == 0 {
-        return
-    }
-
-    i := len(r) - 1
-    for ; bytes.IndexByte(s, r[i]) != -1; i-- {
-    }
-    return r[0 : i+1]
 }
