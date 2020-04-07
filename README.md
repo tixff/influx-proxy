@@ -132,7 +132,7 @@ The configurations in `proxy.json` are the following:
 #### NODE
 
 * `listen_addr`: proxy listen addr
-* `db`: proxy db, client's db must be same with it
+* `db`: proxy db, client's db must be same with it, default is "" for no limit
 * `username`: proxy username
 * `password`: proxy password
 * `data_dir`: data dir to save .dat .rec, default is data
