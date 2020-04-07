@@ -62,18 +62,18 @@ func WriteResponse(w http.ResponseWriter, req *http.Request, rsp *Response, head
     }
 }
 
-func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request) (err error) {
-    q := strings.ToLower(strings.TrimSpace(req.FormValue("q")))
-    if strings.HasPrefix(q, "show") {
-        return iqe.QueryShowQL(w, req)
-    } else if strings.HasPrefix(q, "create") {
-        return iqe.QueryCreateQL(w, req)
+func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
+    stmt := strings.ToLower(tokens[0])
+    if stmt == "show" {
+        return iqe.QueryShowQL(w, req, tokens)
+    } else if stmt == "create" {
+        return iqe.QueryCreateQL(w, req, tokens)
     }
     WriteResponse(w, req, nil, nil, http.StatusOK)
     return
 }
 
-func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Request) (err error) {
+func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
     // remove support of query parameter `chunked`
     req.Form.Del("chunked")
     reqBodyBytes := ReadBodyBytes(req)
@@ -110,15 +110,16 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
     if len(bodies) == 0 {
         rsp = ResponseFromSeries(nil)
     } else {
-        q := strings.TrimSpace(req.FormValue("q"))
-        if iqe.ic.ExecutedQuery[0].MatchString(q) {
+        stmt2 := GetHeadStmtFromTokens(tokens, 2)
+        stmt3 := GetHeadStmtFromTokens(tokens, 3)
+        if stmt2 == "show measurements" || stmt2 == "show series" || stmt2 == "show databases" {
             rsp, err = iqe.reduceByValues(bodies)
-        } else if iqe.ic.ExecutedQuery[1].MatchString(q) {
+        } else if stmt3 == "show field keys" || stmt3 == "show tag keys" || stmt3 == "show tag values" {
             rsp, err = iqe.reduceBySeries(bodies)
-        } else if iqe.ic.ExecutedQuery[2].MatchString(q) {
-            rsp, err = iqe.concatByResults(bodies)
-        } else if iqe.ic.ExecutedQuery[3].MatchString(q) {
+        } else if stmt3 == "show retention policies" {
             rsp, err = iqe.concatByValues(bodies)
+        } else if stmt2 == "show stats" {
+            rsp, err = iqe.concatByResults(bodies)
         } else {
             rsp = ResponseFromSeries(nil)
         }
@@ -133,12 +134,11 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
     return
 }
 
-func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request) (err error) {
-    q := strings.TrimSpace(req.FormValue("q"))
+func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
     reqBodyBytes := ReadBodyBytes(req)
     var header http.Header
     var inactive int
-    if iqe.ic.ExecutedQuery[4].MatchString(q) {
+    if GetHeadStmtFromTokens(tokens, 2) == "create database" {
         for _, api := range iqe.ic.backends {
             if !api.IsActive() {
                 inactive++
@@ -147,7 +147,12 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
             hb := api.(*Backends)
             req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
             req.Form.Del("db")
-            req.Form.Set("q", "create database " + hb.DB)
+            if len(tokens) >= 3 {
+                tokens[2] = hb.DB
+                req.Form.Set("q", strings.Join(tokens, " "))
+            } else {
+                req.Form.Set("q", "create database " + hb.DB)
+            }
             _header, _, _, _err := api.QueryResp(req)
             if _err != nil {
                 err = _err
@@ -214,21 +219,6 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte) (rsp *Response, err
     return ResponseFromSeries(series), nil
 }
 
-func (iqe *InfluxQLExecutor) concatByResults(bodies [][]byte) (rsp *Response, err error) {
-    var results []*Result
-    for _, b := range bodies {
-        _results, _err := ResultsFromResponseBytes(b)
-        if _err != nil {
-            err = _err
-            return
-        }
-        if len(_results) == 1 {
-            results = append(results, _results[0])
-        }
-    }
-    return ResponseFromResults(results), nil
-}
-
 func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rsp *Response, err error) {
     var series models.Rows
     var values [][]interface{}
@@ -249,4 +239,19 @@ func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rsp *Response, err
         series[0].Values = values
     }
     return ResponseFromSeries(series), nil
+}
+
+func (iqe *InfluxQLExecutor) concatByResults(bodies [][]byte) (rsp *Response, err error) {
+    var results []*Result
+    for _, b := range bodies {
+        _results, _err := ResultsFromResponseBytes(b)
+        if _err != nil {
+            err = _err
+            return
+        }
+        if len(_results) == 1 {
+            results = append(results, _results[0])
+        }
+    }
+    return ResponseFromResults(results), nil
 }

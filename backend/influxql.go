@@ -142,6 +142,13 @@ func ScanTokens(q string, n int) (tokens []string) {
     return
 }
 
+func GetHeadStmtFromTokens(tokens []string, n int) (stmt string) {
+    if n <= 0 || n > len(tokens) {
+        n = len(tokens)
+    }
+    return strings.ToLower(strings.Join(tokens[:n], " "))
+}
+
 func GetDatabaseFromInfluxQL(q string) (m string, err error) {
     return GetDatabaseFromTokens(ScanTokens(q, 0))
 }
@@ -224,6 +231,46 @@ func getMeasurement(tokens []string) (m string) {
     if m[0] == '"' || m[0] == '\'' {
         m = m[1: len(m)-1]
     }
+    return
+}
+
+func CheckQuery(q string) (tokens []string, check bool, from bool) {
+    tokens = ScanTokens(q, 0)
+    stmt := strings.ToLower(tokens[0])
+    if stmt == "select" {
+        for i := 1; i < len(tokens); i++ {
+            stmt := strings.ToLower(tokens[i])
+            if stmt == "into" {
+                return tokens, false, false
+            }
+            if stmt == "from" {
+                return tokens, true, true
+            }
+        }
+        return tokens, false, false
+    }
+    if stmt == "show" {
+        for i := 1; i < len(tokens); i++ {
+            stmt := strings.ToLower(tokens[i])
+            if stmt == "from" {
+                return tokens, true, true
+            }
+        }
+    }
+    stmt2 := GetHeadStmtFromTokens(tokens, 2)
+    if _, ok := SupportCmds[stmt2]; ok {
+        return tokens, true, stmt2 == "delete from" || stmt2 == "drop measurement"
+    }
+    stmt3 := GetHeadStmtFromTokens(tokens, 3)
+    if _, ok := SupportCmds[stmt3]; ok {
+        return tokens, true, stmt3 == "drop series from"
+    }
+    return tokens, false, false
+}
+
+func CheckSelectOrShowFromTokens(tokens []string) (check bool) {
+    stmt := strings.ToLower(tokens[0])
+    check = stmt == "select" || stmt == "show"
     return
 }
 

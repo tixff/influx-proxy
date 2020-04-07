@@ -11,7 +11,6 @@ import (
     "log"
     "net/http"
     "os"
-    "regexp"
     "strings"
     "sync"
     "sync/atomic"
@@ -33,9 +32,6 @@ var StatisticsMeasurementName = "influx.proxy.statistics"
 type InfluxCluster struct {
     lock           sync.RWMutex
     query_executor *InfluxQLExecutor
-    ForbiddenQuery []*regexp.Regexp
-    ObligatedQuery []*regexp.Regexp
-    ExecutedQuery  []*regexp.Regexp
     cfgsrc         *FileConfigSource
     backends       map[string]BackendAPI
     m2bs           map[string][]BackendAPI // measurements to backends
@@ -79,10 +75,6 @@ func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig) (ic *Influx
         log.Println(err)
     }
     ic.defaultTags["host"] = host
-
-    ic.ForbidQuery(ForbidCmds)
-    ic.EnsureQuery(SupportCmds)
-    ic.ExecuteQuery(ExecutorCmds)
 
     // feature
     go ic.statistics()
@@ -139,45 +131,6 @@ func (ic *InfluxCluster) WriteStatistics() (err error) {
         return
     }
     return ic.Write([]byte(line + "\n"), "ns")
-}
-
-func (ic *InfluxCluster) ForbidQuery(cmds []string) {
-    ic.lock.Lock()
-    defer ic.lock.Unlock()
-    for _, cmd := range cmds {
-        r, err := regexp.Compile(cmd)
-        if err != nil {
-            panic(err)
-            return
-        }
-        ic.ForbiddenQuery = append(ic.ForbiddenQuery, r)
-    }
-}
-
-func (ic *InfluxCluster) EnsureQuery(cmds []string) {
-    ic.lock.Lock()
-    defer ic.lock.Unlock()
-    for _, cmd := range cmds {
-        r, err := regexp.Compile(cmd)
-        if err != nil {
-            panic(err)
-            return
-        }
-        ic.ObligatedQuery = append(ic.ObligatedQuery, r)
-    }
-}
-
-func (ic *InfluxCluster) ExecuteQuery(cmds []string) {
-    ic.lock.Lock()
-    defer ic.lock.Unlock()
-    for _, cmd := range cmds {
-        r, err := regexp.Compile(cmd)
-        if err != nil {
-            panic(err)
-            return
-        }
-        ic.ExecutedQuery = append(ic.ExecutedQuery, r)
-    }
 }
 
 func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, err error) {
@@ -255,46 +208,6 @@ func (ic *InfluxCluster) Ping() (version string, err error) {
     return
 }
 
-func (ic *InfluxCluster) CheckMeasurementQuery(q string) (err error) {
-    ic.lock.RLock()
-    defer ic.lock.RUnlock()
-
-    if len(ic.ForbiddenQuery) != 0 {
-        for _, fq := range ic.ForbiddenQuery {
-            if fq.MatchString(q) {
-                return ErrQueryForbidden
-            }
-        }
-    }
-
-    if len(ic.ObligatedQuery) != 0 {
-        for _, pq := range ic.ObligatedQuery {
-            if pq.MatchString(q) {
-                return
-            }
-        }
-        return ErrQueryForbidden
-    }
-
-    return
-}
-
-func (ic *InfluxCluster) CheckClusterQuery(q string) (err error) {
-    ic.lock.RLock()
-    defer ic.lock.RUnlock()
-
-    if len(ic.ExecutedQuery) != 0 {
-        for _, pq := range ic.ExecutedQuery {
-            if pq.MatchString(q) {
-                return
-            }
-        }
-        return ErrNotClusterQuery
-    }
-
-    return
-}
-
 func (ic *InfluxCluster) GetBackends(key string) (backends []BackendAPI, ok bool) {
     ic.lock.RLock()
     defer ic.lock.RUnlock()
@@ -342,26 +255,26 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
         return
     }
 
-    err = ic.CheckMeasurementQuery(q)
-    if err != nil {
-        err = ic.CheckClusterQuery(q)
-        if err == nil {
-            err = ic.query_executor.Query(w, req)
-            if err != nil {
-                log.Print("query executor error: ", err)
-                w.WriteHeader(400)
-                w.Write([]byte("query executor error\n"))
-                atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-            }
-            return
-        }
+    tokens, check, from := CheckQuery(q)
+    if !check {
         w.WriteHeader(400)
         w.Write([]byte("query forbidden\n"))
         atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
         return
     }
 
-    key, err := GetMeasurementFromInfluxQL(q)
+    if !from || !CheckSelectOrShowFromTokens(tokens) {
+        err = ic.query_executor.Query(w, req, tokens)
+        if err != nil {
+            log.Print("query executor error: ", err)
+            w.WriteHeader(400)
+            w.Write([]byte("query executor error\n"))
+            atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
+        }
+        return
+    }
+
+    key, err := GetMeasurementFromTokens(tokens)
     if err != nil {
         log.Printf("can't get measurement: %s\n", q)
         w.WriteHeader(400)

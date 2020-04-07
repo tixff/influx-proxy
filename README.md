@@ -148,17 +148,20 @@ The configurations in `proxy.json` are the following:
 Query Commands
 --------
 
-#### Unsupported commands
+### Unsupported commands
 
 The following commands are forbid.
 
+* `ALTER`
 * `DELETE`
 * `DROP`
 * `GRANT`
 * `REVOKE`
+* `KILL`
 * `SELECT INTO`
+* `Multiple queries` delimited by semicolon `;`
 
-#### Supported commands
+### Supported commands
 
 Only support match the following commands.
 
@@ -169,8 +172,8 @@ Only support match the following commands.
 * `show field keys`
 * `show tag keys`
 * `show tag values`
-* `show stats`
 * `show retention policies`
+* `show stats`
 * `show databases`
 * `create database`
 

@@ -5,13 +5,15 @@
 package backend
 
 var (
-    ForbidCmds   = []string{"(?i:^delete|^drop|^grant|^revoke|select.+into.+from)"}
-    SupportCmds  = []string{"(?i:^select.+from|^show.+from)"}
-    ExecutorCmds = []string{
-        "(?i:^show\\s+measurements|^show\\s+series|^show\\s+databases$)",
-        "(?i:^show\\s+field\\s+keys|^show\\s+tag\\s+keys|^show\\s+tag\\s+values)",
-        "(?i:^show\\s+stats)",
-        "(?i:^show\\s+retention\\s+policies)",
-        "(?i:^create\\s+database)",
+    SupportCmds = map[string]bool{
+        "show measurements": true,
+        "show series": true,
+        "show field keys": true,
+        "show tag keys": true,
+        "show tag values": true,
+        "show retention policies": true,
+        "show stats": true,
+        "show databases": true,
+        "create database": true,
     }
 )
