@@ -231,7 +231,7 @@ func TestInfluxdbClusterQuery(t *testing.T) {
         {
             name:  "delete_cpu",
             query: " DELETE FROM \"cpu\" WHERE time < '2000-01-01T00:00:00Z'",
-            want:  400,
+            want:  200,
         },
         {
             name:  "show_series",
@@ -274,9 +274,14 @@ func TestInfluxdbClusterQuery(t *testing.T) {
             want:  400,
         },
         {
+            name:  "drop_series",
+            query: "DROP series from \"cpu.load\"",
+            want:  200,
+        },
+        {
             name:  "drop_measurement",
             query: "DROP measurement \"cpu.load\"",
-            want:  400,
+            want:  200,
         },
     }
 
