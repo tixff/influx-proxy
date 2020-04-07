@@ -274,6 +274,14 @@ func CheckSelectOrShowFromTokens(tokens []string) (check bool) {
     return
 }
 
+func CheckDeleteOrDropMeasurementFromTokens(tokens []string) (check bool) {
+    if len(tokens) >= 3 {
+        stmt := GetHeadStmtFromTokens(tokens, 2)
+        return stmt == "delete from" || stmt == "drop measurement" || stmt == "drop series"
+    }
+    return
+}
+
 func ScanKey(pointbuf []byte) (key string, err error) {
     keyslice := make([]byte, 0)
     buflen := len(pointbuf)

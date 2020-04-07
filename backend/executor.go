@@ -8,6 +8,7 @@ package backend
 import (
     "bytes"
     "compress/gzip"
+    "errors"
     "fmt"
     "io"
     "io/ioutil"
@@ -68,6 +69,8 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tok
         return iqe.QueryShowQL(w, req, tokens)
     } else if stmt == "create" {
         return iqe.QueryCreateQL(w, req, tokens)
+    } else if stmt == "delete" || stmt == "drop" {
+        return iqe.QueryDeleteOrDropQL(w, req, tokens)
     }
     WriteResponse(w, req, nil, nil, http.StatusOK)
     return
@@ -136,6 +139,7 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 
 func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
     reqBodyBytes := ReadBodyBytes(req)
+    rsp := ResponseFromSeries(nil)
     var header http.Header
     var inactive int
     if GetHeadStmtFromTokens(tokens, 2) == "create database" {
@@ -160,10 +164,43 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
             }
             header = _header
         }
+        if inactive > 0 {
+            rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(iqe.ic.backends))
+        }
     }
+    WriteResponse(w, req, rsp, header, http.StatusOK)
+    return
+}
+
+func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
+    reqBodyBytes := ReadBodyBytes(req)
     rsp := ResponseFromSeries(nil)
-    if inactive > 0 {
-        rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(iqe.ic.backends))
+    var header http.Header
+    var inactive int
+    if CheckDeleteOrDropMeasurementFromTokens(tokens) {
+        key, err := GetMeasurementFromTokens(tokens)
+        if err != nil {
+            return errors.New("can't get measurement: "+req.FormValue("q"))
+        }
+        apis, ok := iqe.ic.GetBackends(key)
+        if !ok {
+            return errors.New(fmt.Sprintf("unknown measurement: %s, query: %s", key, req.FormValue("q")))
+        }
+        for _, api := range apis {
+            if !api.IsActive() {
+                inactive++
+                continue
+            }
+            req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
+            _header, _, _, _err := api.QueryResp(req)
+            if _err != nil {
+                return _err
+            }
+            header = _header
+        }
+        if inactive > 0 {
+            rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(apis))
+        }
     }
     WriteResponse(w, req, rsp, header, http.StatusOK)
     return

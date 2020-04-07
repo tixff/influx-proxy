@@ -15,5 +15,8 @@ var (
         "show stats": true,
         "show databases": true,
         "create database": true,
+        "delete from": true,
+        "drop series from": true,
+        "drop measurement": true,
     }
 )

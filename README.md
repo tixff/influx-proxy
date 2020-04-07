@@ -153,8 +153,6 @@ Query Commands
 The following commands are forbid.
 
 * `ALTER`
-* `DELETE`
-* `DROP`
 * `GRANT`
 * `REVOKE`
 * `KILL`
@@ -176,6 +174,9 @@ Only support match the following commands.
 * `show stats`
 * `show databases`
 * `create database`
+* `delete from`
+* `drop series from`
+* `drop measurement`
 
 License
 -------
