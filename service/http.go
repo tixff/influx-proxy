@@ -10,13 +10,11 @@ import (
     "log"
     "net/http"
     "net/http/pprof"
-    "strings"
 
     "github.com/chengshiwen/influx-proxy/backend"
 )
 
 type HttpService struct {
-    db string
     username string
     password string
     ic *backend.InfluxCluster
@@ -24,13 +22,12 @@ type HttpService struct {
 
 func NewHttpService(ic *backend.InfluxCluster, nodecfg *backend.NodeConfig) (hs *HttpService) {
     hs = &HttpService{
-        db: nodecfg.DB,
         username: nodecfg.Username,
         password: nodecfg.Password,
         ic: ic,
     }
-    if hs.db != "" {
-        log.Print("http database: ", hs.db)
+    if hs.ic.DB != "" {
+        log.Print("http database: ", hs.ic.DB)
     }
     return
 }
@@ -47,11 +44,6 @@ func (hs *HttpService) checkAuth(req *http.Request) bool {
         return true
     }
     return false
-}
-
-func (hs *HttpService) checkDatabase(q string) bool {
-    q = strings.ToLower(strings.TrimSpace(q))
-    return (strings.HasPrefix(q, "show") && strings.Contains(q, "databases")) || (strings.HasPrefix(q, "create") && strings.Contains(q, "database"))
 }
 
 func (hs *HttpService) Register(mux *http.ServeMux) {
@@ -85,13 +77,6 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
     }
 
     q := req.FormValue("q")
-    db := req.FormValue("db")
-    if hs.db != "" && !hs.checkDatabase(q) && db != hs.db {
-        w.WriteHeader(404)
-        w.Write([]byte("database forbidden\n"))
-        return
-    }
-
     err := hs.ic.Query(w, req)
     if err != nil {
         log.Printf("query error: %s, the query is %s, the client is %s\n", err, q, req.RemoteAddr)
@@ -120,9 +105,18 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
         return
     }
 
+    precision := req.URL.Query().Get("precision")
+    if precision == "" {
+        precision = "ns"
+    }
     db := req.URL.Query().Get("db")
-    if hs.db != "" && db != hs.db {
-        w.WriteHeader(404)
+    if db == "" {
+        w.WriteHeader(400)
+        w.Write([]byte("database not found\n"))
+        return
+    }
+    if hs.ic.DB != "" && db != hs.ic.DB {
+        w.WriteHeader(400)
         w.Write([]byte("database forbidden\n"))
         return
     }
@@ -146,10 +140,6 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
         return
     }
 
-    precision := req.URL.Query().Get("precision")
-    if precision == "" {
-        precision = "ns"
-    }
     err = hs.ic.Write(p, precision)
     if err == nil {
         w.WriteHeader(204)

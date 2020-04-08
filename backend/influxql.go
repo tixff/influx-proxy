@@ -128,7 +128,7 @@ func ScanToken(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 func ScanTokens(q string, n int) (tokens []string) {
-    q = strings.TrimRight(q, ";")
+    q = strings.TrimRight(strings.TrimSpace(q), "; ")
     buf := bytes.NewBuffer([]byte(q))
     scanner := bufio.NewScanner(buf)
     scanner.Buffer([]byte(q), len(q))
@@ -266,6 +266,17 @@ func CheckQuery(q string) (tokens []string, check bool, from bool) {
         return tokens, true, stmt3 == "drop series from"
     }
     return tokens, false, false
+}
+
+func CheckDatabaseFromTokens(tokens []string) (check bool, show bool, db string) {
+    stmt := GetHeadStmtFromTokens(tokens, 2)
+    show = stmt == "show databases"
+    alter := stmt == "create database" || stmt == "drop database"
+    check = show || alter
+    if alter && len(tokens) >= 3 {
+        db = getDatabase(tokens[2:])
+    }
+    return
 }
 
 func CheckSelectOrShowFromTokens(tokens []string) (check bool) {

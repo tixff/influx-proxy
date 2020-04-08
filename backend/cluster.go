@@ -40,6 +40,7 @@ type InfluxCluster struct {
     ticker         *time.Ticker
     defaultTags    map[string]string
     datadir        string
+    DB             string
     WriteTracing   bool
     QueryTracing   bool
 }
@@ -66,6 +67,7 @@ func NewInfluxCluster(cfgsrc *FileConfigSource, nodecfg *NodeConfig) (ic *Influx
         ticker:         time.NewTicker(time.Millisecond * time.Duration(nodecfg.StatInterval)),
         defaultTags:    map[string]string{"addr": nodecfg.ListenAddr},
         datadir:        nodecfg.DataDir,
+        DB:             nodecfg.DB,
         WriteTracing:   nodecfg.WriteTracing,
         QueryTracing:   nodecfg.QueryTracing,
     }
@@ -263,6 +265,28 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
         return
     }
 
+    checkDb, showDb, db := CheckDatabaseFromTokens(tokens)
+    if !checkDb {
+        db = req.FormValue("db")
+        if db == "" {
+            db, _ = GetDatabaseFromTokens(tokens)
+        }
+    }
+    if !showDb {
+        if db == "" {
+            w.WriteHeader(400)
+            w.Write([]byte("database not found\n"))
+            atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
+            return
+        }
+        if ic.DB != "" && db != ic.DB {
+            w.WriteHeader(400)
+            w.Write([]byte("database forbidden\n"))
+            atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
+            return
+        }
+    }
+
     if !from || !CheckSelectOrShowFromTokens(tokens) {
         err = ic.query_executor.Query(w, req, tokens)
         if err != nil {
@@ -307,7 +331,6 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
     if err == nil {
         w.Write([]byte("backends not active\n"))
     } else {
-        log.Print("query error: ", err)
         w.Write([]byte("query error\n"))
     }
     atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)

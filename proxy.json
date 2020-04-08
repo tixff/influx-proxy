@@ -30,7 +30,7 @@
     },
     "NODE": {
         "listen_addr": ":7076",
-        "db": "",
+        "db": "test",
         "username": "",
         "password": "",
         "data_dir": "data",
