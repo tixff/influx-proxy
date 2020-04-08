@@ -217,7 +217,7 @@ func (bs *Backends) Rewrite() (err error) {
     if err != nil {
         return
     }
-    if p == nil { // why?
+    if p == nil {
         return
     }
 

@@ -27,7 +27,6 @@ func NewFileBackend(filename string, datadir string) (fb *FileBackend, err error
     fb = &FileBackend{
         filename: filename,
         datadir: datadir,
-        dataflag: false,
     }
 
     fb.producer, err = os.OpenFile(filepath.Join(datadir, filename+".dat"),
@@ -55,6 +54,10 @@ func NewFileBackend(filename string, datadir string) (fb *FileBackend, err error
     if err != nil {
         err = nil
     }
+
+    off_producer, _ := fb.producer.Seek(0, io.SeekEnd)
+    off, _ := fb.consumer.Seek(0, io.SeekCurrent)
+    fb.dataflag = off_producer > off
     return
 }
 
@@ -154,7 +157,6 @@ func (fb *FileBackend) UpdateMeta() (err error) {
 
     off_producer, err := fb.producer.Seek(0, io.SeekCurrent)
     if err != nil {
-        log.Print("OK")
         log.Print("seek producer error: ", err)
         return
     }
@@ -207,8 +209,10 @@ func (fb *FileBackend) RollbackMeta() (err error) {
 
     var off int64
     err = binary.Read(fb.meta, binary.BigEndian, &off)
-    if err != nil && err != io.EOF {
-        log.Print("read meta error: ", err)
+    if err != nil {
+        if err != io.EOF {
+            log.Print("read meta error: ", err)
+        }
         return
     }
 
