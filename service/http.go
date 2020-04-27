@@ -5,147 +5,147 @@
 package service
 
 import (
-    "compress/gzip"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "net/http/pprof"
+	"compress/gzip"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/http/pprof"
 
-    "github.com/chengshiwen/influx-proxy/backend"
+	"github.com/chengshiwen/influx-proxy/backend"
 )
 
 type HttpService struct {
-    username string
-    password string
-    ic *backend.InfluxCluster
+	username string
+	password string
+	ic       *backend.InfluxCluster
 }
 
 func NewHttpService(ic *backend.InfluxCluster, nodecfg *backend.NodeConfig) (hs *HttpService) {
-    hs = &HttpService{
-        username: nodecfg.Username,
-        password: nodecfg.Password,
-        ic: ic,
-    }
-    if hs.ic.DB != "" {
-        log.Print("http database: ", hs.ic.DB)
-    }
-    return
+	hs = &HttpService{
+		username: nodecfg.Username,
+		password: nodecfg.Password,
+		ic:       ic,
+	}
+	if hs.ic.DB != "" {
+		log.Print("http database: ", hs.ic.DB)
+	}
+	return
 }
 
 func (hs *HttpService) checkAuth(req *http.Request) bool {
-    if hs.username == "" && hs.password == "" {
-        return true
-    }
-    q := req.URL.Query()
-    if u, p := q.Get("u"), q.Get("p"); u == hs.username && p == hs.password {
-        return true
-    }
-    if u, p, ok := req.BasicAuth(); ok && u == hs.username && p == hs.password {
-        return true
-    }
-    return false
+	if hs.username == "" && hs.password == "" {
+		return true
+	}
+	q := req.URL.Query()
+	if u, p := q.Get("u"), q.Get("p"); u == hs.username && p == hs.password {
+		return true
+	}
+	if u, p, ok := req.BasicAuth(); ok && u == hs.username && p == hs.password {
+		return true
+	}
+	return false
 }
 
 func (hs *HttpService) Register(mux *http.ServeMux) {
-    mux.HandleFunc("/ping", hs.HandlerPing)
-    mux.HandleFunc("/query", hs.HandlerQuery)
-    mux.HandleFunc("/write", hs.HandlerWrite)
-    mux.HandleFunc("/debug/pprof/", pprof.Index)
-    mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/ping", hs.HandlerPing)
+	mux.HandleFunc("/query", hs.HandlerQuery)
+	mux.HandleFunc("/write", hs.HandlerWrite)
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 }
 
 func (hs *HttpService) HandlerPing(w http.ResponseWriter, req *http.Request) {
-    defer req.Body.Close()
-    version, err := hs.ic.Ping()
-    if err != nil {
-        panic("WTF")
-        return
-    }
-    w.Header().Add("X-Influxdb-Version", version)
-    w.WriteHeader(204)
-    return
+	defer req.Body.Close()
+	version, err := hs.ic.Ping()
+	if err != nil {
+		panic("WTF")
+		return
+	}
+	w.Header().Add("X-Influxdb-Version", version)
+	w.WriteHeader(204)
+	return
 }
 
 func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
-    defer req.Body.Close()
-    w.Header().Add("X-Influxdb-Version", backend.VERSION)
+	defer req.Body.Close()
+	w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
-    if !hs.checkAuth(req) {
-        w.WriteHeader(401)
-        w.Write([]byte("authentication failed\n"))
-        return
-    }
+	if !hs.checkAuth(req) {
+		w.WriteHeader(401)
+		w.Write([]byte("authentication failed\n"))
+		return
+	}
 
-    q := req.FormValue("q")
-    err := hs.ic.Query(w, req)
-    if err != nil {
-        log.Printf("query error: %s, the query is %s, the client is %s\n", err, q, req.RemoteAddr)
-        return
-    }
-    if hs.ic.QueryTracing {
-        log.Printf("the query is %s, the client is %s\n", q, req.RemoteAddr)
-    }
+	q := req.FormValue("q")
+	err := hs.ic.Query(w, req)
+	if err != nil {
+		log.Printf("query error: %s, the query is %s, the client is %s\n", err, q, req.RemoteAddr)
+		return
+	}
+	if hs.ic.QueryTracing {
+		log.Printf("the query is %s, the client is %s\n", q, req.RemoteAddr)
+	}
 
-    return
+	return
 }
 
 func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
-    defer req.Body.Close()
-    w.Header().Add("X-Influxdb-Version", backend.VERSION)
+	defer req.Body.Close()
+	w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
-    if !hs.checkAuth(req) {
-        w.WriteHeader(401)
-        w.Write([]byte("authentication failed\n"))
-        return
-    }
+	if !hs.checkAuth(req) {
+		w.WriteHeader(401)
+		w.Write([]byte("authentication failed\n"))
+		return
+	}
 
-    if req.Method != "POST" {
-        w.WriteHeader(405)
-        w.Write([]byte("method not allow\n"))
-        return
-    }
+	if req.Method != "POST" {
+		w.WriteHeader(405)
+		w.Write([]byte("method not allow\n"))
+		return
+	}
 
-    precision := req.URL.Query().Get("precision")
-    if precision == "" {
-        precision = "ns"
-    }
-    db := req.URL.Query().Get("db")
-    if db == "" {
-        w.WriteHeader(400)
-        w.Write([]byte("database not found\n"))
-        return
-    }
-    if hs.ic.DB != "" && db != hs.ic.DB {
-        w.WriteHeader(400)
-        w.Write([]byte("database forbidden\n"))
-        return
-    }
+	precision := req.URL.Query().Get("precision")
+	if precision == "" {
+		precision = "ns"
+	}
+	db := req.URL.Query().Get("db")
+	if db == "" {
+		w.WriteHeader(400)
+		w.Write([]byte("database not found\n"))
+		return
+	}
+	if hs.ic.DB != "" && db != hs.ic.DB {
+		w.WriteHeader(400)
+		w.Write([]byte("database forbidden\n"))
+		return
+	}
 
-    body := req.Body
-    if req.Header.Get("Content-Encoding") == "gzip" {
-        b, err := gzip.NewReader(req.Body)
-        if err != nil {
-            w.WriteHeader(400)
-            w.Write([]byte("unable to decode gzip body\n"))
-            return
-        }
-        defer b.Close()
-        body = b
-    }
+	body := req.Body
+	if req.Header.Get("Content-Encoding") == "gzip" {
+		b, err := gzip.NewReader(req.Body)
+		if err != nil {
+			w.WriteHeader(400)
+			w.Write([]byte("unable to decode gzip body\n"))
+			return
+		}
+		defer b.Close()
+		body = b
+	}
 
-    p, err := ioutil.ReadAll(body)
-    if err != nil {
-        w.WriteHeader(400)
-        w.Write([]byte(err.Error()))
-        return
-    }
+	p, err := ioutil.ReadAll(body)
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
-    err = hs.ic.Write(p, precision)
-    if err == nil {
-        w.WriteHeader(204)
-    }
-    if hs.ic.WriteTracing {
-        log.Printf("write body received by handler: %s, the client is %s\n", p, req.RemoteAddr)
-    }
-    return
+	err = hs.ic.Write(p, precision)
+	if err == nil {
+		w.WriteHeader(204)
+	}
+	if hs.ic.WriteTracing {
+		log.Printf("write body received by handler: %s, the client is %s\n", p, req.RemoteAddr)
+	}
+	return
 }
