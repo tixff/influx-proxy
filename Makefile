@@ -30,6 +30,9 @@ bench:
 run:
 	go run main.go
 
+fmt:
+	find . -name "*.go" -exec go fmt {} \;
+
 clean:
 	rm -rf bin data
 
