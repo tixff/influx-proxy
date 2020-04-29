@@ -4,19 +4,21 @@
 
 package backend
 
+import "github.com/deckarep/golang-set"
+
 var (
-	SupportCmds = map[string]bool{
-		"show measurements":       true,
-		"show series":             true,
-		"show field keys":         true,
-		"show tag keys":           true,
-		"show tag values":         true,
-		"show retention policies": true,
-		"show stats":              true,
-		"show databases":          true,
-		"create database":         true,
-		"delete from":             true,
-		"drop series from":        true,
-		"drop measurement":        true,
-	}
+	SupportCmds = mapset.NewSet(
+		"show measurements",
+		"show series",
+		"show field keys",
+		"show tag keys",
+		"show tag values",
+		"show retention policies",
+		"show stats",
+		"show databases",
+		"create database",
+		"delete from",
+		"drop series from",
+		"drop measurement",
+	)
 )

@@ -258,11 +258,11 @@ func CheckQuery(q string) (tokens []string, check bool, from bool) {
 		}
 	}
 	stmt2 := GetHeadStmtFromTokens(tokens, 2)
-	if _, ok := SupportCmds[stmt2]; ok {
+	if SupportCmds.Contains(stmt2) {
 		return tokens, true, stmt2 == "delete from" || stmt2 == "drop measurement"
 	}
 	stmt3 := GetHeadStmtFromTokens(tokens, 3)
-	if _, ok := SupportCmds[stmt3]; ok {
+	if SupportCmds.Contains(stmt3) {
 		return tokens, true, stmt3 == "drop series from"
 	}
 	return tokens, false, false
