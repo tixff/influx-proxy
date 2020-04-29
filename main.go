@@ -81,7 +81,7 @@ func main() {
 
 	fcs, err := backend.NewFileConfigSource(ConfigFile)
 	if err != nil {
-		fmt.Println("config file load failed")
+		fmt.Printf("config file format invalid: %s\n", err)
 		return
 	}
 	nodecfg := fcs.LoadNode()
@@ -90,7 +90,11 @@ func main() {
 	createDataDir(nodecfg.DataDir)
 
 	ic := backend.NewInfluxCluster(fcs, &nodecfg)
-	ic.LoadConfig()
+	err = ic.LoadConfig()
+	if err != nil {
+		log.Printf("config file load failed: %s\n", err)
+		return
+	}
 
 	mux := http.NewServeMux()
 	service.NewHttpService(ic, &nodecfg).Register(mux)

@@ -143,6 +143,11 @@ func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, err err
 		return
 	}
 
+	if len(bkcfgs) == 0 {
+		err = errors.New("backends cannot be empty")
+		return
+	}
+
 	for name, cfg := range bkcfgs {
 		backends[name], err = NewBackends(cfg, name, ic.datadir)
 		if err != nil {
@@ -159,6 +164,11 @@ func (ic *InfluxCluster) loadMeasurements(backends map[string]BackendAPI) (m2bs 
 
 	m_map, err := ic.cfgsrc.LoadMeasurements()
 	if err != nil {
+		return
+	}
+
+	if len(m_map) == 0 {
+		err = errors.New("keymaps cannot be empty")
 		return
 	}
 
