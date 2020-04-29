@@ -170,7 +170,7 @@ func (bs *Backends) Flush() {
 				log.Printf("bad backend, drop all data")
 				return
 			default:
-				log.Printf("write http error: %s\n", err)
+				log.Printf("write http error: %s, length: %d\n", bs.HttpBackend.URL, len(p))
 			}
 		}
 
@@ -232,7 +232,7 @@ func (bs *Backends) Rewrite() (err error) {
 		log.Printf("bad backend, drop all data")
 		err = nil
 	default:
-		log.Printf("rewrite http error: %s\n", err)
+		log.Printf("rewrite http error: %s, length: %d\n", bs.HttpBackend.URL, len(p))
 
 		err = bs.fb.RollbackMeta()
 		if err != nil {
