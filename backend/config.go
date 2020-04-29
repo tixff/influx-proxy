@@ -14,11 +14,11 @@ const (
 	VERSION = "1.4.2"
 )
 
-// listen_addr: proxy listen addr
-// db: proxy db, client's db must be same with it
-// username: proxy username
-// password: proxy password
-// data_dir: data dir to save .dat .rec, default is data
+// listen_addr: proxy listen addr, default is ":7076"
+// db: proxy db, client's db must be same with it, default is "" for no limit
+// username: proxy username, default is "" for no auth
+// password: proxy password, default is "" for no auth
+// data_dir: data dir to save .dat .rec, default is "data"
 // log_path: log file path, default "" for stdout
 // idle_timeout: keep-alives wait time, default is 10000ms
 // stat_interval: interval to collect statistics, default is 10000ms
@@ -45,8 +45,8 @@ type NodeConfig struct {
 
 // url: influxdb addr or other http backend which supports influxdb line protocol
 // db: influxdb db
-// username: influxdb username
-// password: influxdb password
+// username: influxdb username, default is "" for no auth
+// password: influxdb password, default is "" for no auth
 // flush_size: default config is 10000, wait 10000 points write
 // flush_time: default config is 1000ms, wait 1 second write whether point count has bigger than flush_size config
 // timeout: default config is 10000ms, write timeout until 10 seconds

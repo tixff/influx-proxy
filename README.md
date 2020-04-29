@@ -52,7 +52,6 @@ $ ./bin/influx-proxy -config proxy.json
 #### Build Release
 
 ```sh
-$ cd $GOPATH/src/github.com/chengshiwen/influx-proxy
 $ # build current platform
 $ make build
 $ # build linux amd64
@@ -105,7 +104,7 @@ It will use the `cpu` corresponding backends.
 * **\_default\_ match finally**. For instance, we use `cpu.load` for measurement's name. The KEYMAPS only has `_default_` key.
 It will use the `_default_` corresponding backends.
 
-Proxy Configuration
+Configuration
 --------
 
 The configurations in `proxy.json` are the following:
@@ -114,8 +113,8 @@ The configurations in `proxy.json` are the following:
 
 * `url`: influxdb addr or other http backend which supports influxdb line protocol
 * `db`: influxdb db
-* `username`: influxdb username
-* `password`: influxdb password
+* `username`: influxdb username, default is "" for no auth
+* `password`: influxdb password, default is "" for no auth
 * `flush_size`: default config is 10000, wait 10000 points write
 * `flush_time`: default config is 1000ms, wait 1 second write whether point count has bigger than flush_size config
 * `timeout`: default config is 10000ms, write timeout until 10 seconds
@@ -131,11 +130,11 @@ The configurations in `proxy.json` are the following:
 
 #### NODE
 
-* `listen_addr`: proxy listen addr
+* `listen_addr`: proxy listen addr, default is ":7076"
 * `db`: proxy db, client's db must be same with it, default is "" for no limit
-* `username`: proxy username
-* `password`: proxy password
-* `data_dir`: data dir to save .dat .rec, default is data
+* `username`: proxy username, default is "" for no auth
+* `password`: proxy password, default is "" for no auth
+* `data_dir`: data dir to save .dat .rec, default is "data"
 * `log_path`: log file path, default "" for stdout
 * `idle_timeout`: keep-alives wait time, default is 10000ms
 * `stat_interval`: interval to collect statistics, default is 10000ms
@@ -148,7 +147,7 @@ The configurations in `proxy.json` are the following:
 Query Commands
 --------
 
-### Unsupported commands
+#### Unsupported commands
 
 The following commands are forbid.
 
@@ -159,7 +158,7 @@ The following commands are forbid.
 * `SELECT INTO`
 * `Multiple queries` delimited by semicolon `;`
 
-### Supported commands
+#### Supported commands
 
 Only support match the following commands.
 
