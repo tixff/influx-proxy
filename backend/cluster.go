@@ -337,8 +337,24 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 		}
 	}
 
+	for _, api := range apis {
+		if !api.IsActive() || !api.IsWriteOnly() {
+			continue
+		}
+		err = api.Query(w, req)
+		if err == nil {
+			return
+		}
+	}
+
 	w.WriteHeader(400)
 	if err == nil {
+		backends := make([]string, len(apis))
+		for i, api := range apis {
+			hb := api.(*Backends)
+			backends[i] = hb.URL
+		}
+		log.Printf("backends not active: %+v, query: %s, measurement: %s", backends, q, key)
 		w.Write([]byte("backends not active\n"))
 	} else {
 		w.Write([]byte("query error\n"))
