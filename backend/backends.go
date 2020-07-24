@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/panjf2000/ants"
+	"github.com/panjf2000/ants/v2"
 )
 
 type Backends struct {
