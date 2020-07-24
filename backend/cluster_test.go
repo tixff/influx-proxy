@@ -271,7 +271,7 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 		{
 			name:  "write.only",
 			query: " select cpu_load from write_only",
-			want:  400,
+			want:  200,
 		},
 		{
 			name:  "drop_series",

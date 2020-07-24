@@ -18,7 +18,7 @@ type Backends struct {
 	*HttpBackend
 	fb              *FileBackend
 	pool            *ants.Pool
-	FlushSize       int32
+	FlushSize       int
 	FlushTime       int
 	RewriteInterval int
 
@@ -27,7 +27,7 @@ type Backends struct {
 	ch_write         chan []byte
 	buffer           *bytes.Buffer
 	ch_timer         <-chan time.Time
-	write_counter    int32
+	write_counter    int
 	rewriter_running bool
 	wg               sync.WaitGroup
 }
@@ -36,7 +36,7 @@ type Backends struct {
 func NewBackends(cfg *BackendConfig, name string, datadir string) (bs *Backends, err error) {
 	bs = &Backends{
 		HttpBackend:      NewHttpBackend(cfg),
-		FlushSize:        int32(cfg.FlushSize),
+		FlushSize:        cfg.FlushSize,
 		FlushTime:        cfg.FlushTime,
 		RewriteInterval:  cfg.RewriteInterval,
 		running:          true,
