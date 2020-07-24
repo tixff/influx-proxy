@@ -120,6 +120,7 @@ The configurations in `proxy.json` are the following:
 * `timeout`: default config is 10000ms, write timeout until 10 seconds
 * `check_interval`: default config is 1000ms, check backend active every 1 second
 * `rewrite_interval`: default config is 10000ms, rewrite every 10 seconds
+* `conn_pool_size`: default config is 20, create a connection pool which size is 20
 * `write_only`: default is false
 
 #### KEYMAPS

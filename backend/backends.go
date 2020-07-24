@@ -10,11 +10,14 @@ import (
 	"log"
 	"sync"
 	"time"
+
+	"github.com/panjf2000/ants"
 )
 
 type Backends struct {
 	*HttpBackend
 	fb              *FileBackend
+	pool            *ants.Pool
 	FlushSize       int32
 	FlushTime       int
 	RewriteInterval int
@@ -42,6 +45,10 @@ func NewBackends(cfg *BackendConfig, name string, datadir string) (bs *Backends,
 		rewriter_running: false,
 	}
 	bs.fb, err = NewFileBackend(name, datadir)
+	if err != nil {
+		return
+	}
+	bs.pool, err = ants.NewPool(cfg.ConnPoolSize)
 	if err != nil {
 		return
 	}
@@ -90,6 +97,7 @@ func (bs *Backends) Write(p []byte) (err error) {
 
 func (bs *Backends) Close() (err error) {
 	bs.running = false
+	bs.pool.Release()
 	close(bs.ch_write)
 	return
 }
@@ -144,9 +152,8 @@ func (bs *Backends) Flush() {
 		return
 	}
 
-	// TODO: limitation
 	bs.wg.Add(1)
-	go func() {
+	bs.pool.Submit(func() {
 		defer bs.wg.Done()
 		var buf bytes.Buffer
 		err := Compress(&buf, p)
@@ -180,7 +187,7 @@ func (bs *Backends) Flush() {
 		}
 		// don't try to run rewrite loop directly.
 		// that need a lock.
-	}()
+	})
 
 	return
 }

@@ -9,7 +9,8 @@
             "flush_time": 1000,
             "timeout": 10000,
             "check_interval": 1000,
-            "rewrite_interval": 10000
+            "rewrite_interval": 10000,
+            "conn_pool_size": 20
         },
         "influxdb-2": {
             "url": "http://127.0.0.1:8087",
@@ -20,7 +21,8 @@
             "flush_time": 1000,
             "timeout": 10000,
             "check_interval": 1000,
-            "rewrite_interval": 10000
+            "rewrite_interval": 10000,
+            "conn_pool_size": 20
         }
     },
     "KEYMAPS": {

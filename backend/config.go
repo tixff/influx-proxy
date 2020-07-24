@@ -52,6 +52,7 @@ type NodeConfig struct {
 // timeout: default config is 10000ms, write timeout until 10 seconds
 // check_interval: default config is 1000ms, check backend active every 1 second
 // rewrite_interval: default config is 10000ms, rewrite every 10 seconds
+// conn_pool_size: default config is 20, create a connection pool which size is 20
 // write_only: default is false
 type BackendConfig struct {
 	URL             string `json:"url"`
@@ -63,6 +64,7 @@ type BackendConfig struct {
 	Timeout         int    `json:"timeout"`
 	CheckInterval   int    `json:"check_interval"`
 	RewriteInterval int    `json:"rewrite_interval"`
+	ConnPoolSize    int    `json:"conn_pool_size"`
 	WriteOnly       bool   `json:"write_only"`
 }
 
@@ -127,6 +129,7 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
 			Timeout:         val.Timeout,
 			CheckInterval:   val.CheckInterval,
 			RewriteInterval: val.RewriteInterval,
+			ConnPoolSize:    val.ConnPoolSize,
 			WriteOnly:       val.WriteOnly,
 		}
 		if cfg.FlushSize == 0 {
@@ -143,6 +146,9 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
 		}
 		if cfg.RewriteInterval == 0 {
 			cfg.RewriteInterval = 10000
+		}
+		if cfg.ConnPoolSize == 0 {
+			cfg.ConnPoolSize = 20
 		}
 		backends[name] = cfg
 	}
