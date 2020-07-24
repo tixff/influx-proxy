@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -58,14 +59,10 @@ type HttpBackend struct {
 func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
 	hb = &HttpBackend{
 		client: &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: strings.HasPrefix(cfg.URL, "https")},
-			},
-			Timeout: time.Millisecond * time.Duration(cfg.Timeout),
+			Transport: NewTransport(cfg.ConnPoolSize, strings.HasPrefix(cfg.URL, "https")),
+			Timeout:   time.Millisecond * time.Duration(cfg.Timeout),
 		},
-		transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: strings.HasPrefix(cfg.URL, "https")},
-		},
+		transport: NewTransport(cfg.ConnPoolSize, strings.HasPrefix(cfg.URL, "https")),
 		Interval:  cfg.CheckInterval,
 		URL:       cfg.URL,
 		DB:        cfg.DB,
@@ -77,6 +74,21 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
 	}
 	go hb.CheckActive()
 	return
+}
+
+func NewTransport(connSize int, tlsSkip bool) (transport *http.Transport) {
+	return &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   time.Second * 30,
+			KeepAlive: time.Second * 30,
+		}).DialContext,
+		MaxIdleConns:          connSize * 2,
+		MaxIdleConnsPerHost:   connSize * 2,
+		IdleConnTimeout:       time.Second * 60,
+		TLSHandshakeTimeout:   time.Second * 10,
+		ExpectContinueTimeout: time.Second * 1,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: tlsSkip},
+	}
 }
 
 // TODO: update active when calling successed or failed.
