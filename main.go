@@ -84,6 +84,11 @@ func main() {
 		fmt.Printf("config file format invalid: %s\n", err)
 		return
 	}
+	if GitCommit == "" {
+		log.Printf("version: %s", backend.VERSION)
+	} else {
+		log.Printf("version: %s, commit: %s, build: %s", backend.VERSION, GitCommit, BuildTime)
+	}
 	nodecfg := fcs.LoadNode()
 
 	initLog(nodecfg.LogPath)
