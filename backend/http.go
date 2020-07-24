@@ -6,7 +6,6 @@ package backend
 
 import (
 	"bytes"
-	"compress/gzip"
 	"crypto/tls"
 	"errors"
 	"io"
@@ -16,6 +15,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	gzip "github.com/klauspost/pgzip"
 )
 
 var (

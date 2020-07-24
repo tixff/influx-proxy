@@ -5,13 +5,13 @@
 package service
 
 import (
-	"compress/gzip"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/pprof"
 
 	"github.com/chengshiwen/influx-proxy/backend"
+	gzip "github.com/klauspost/pgzip"
 )
 
 type HttpService struct {
