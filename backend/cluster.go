@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -30,7 +29,6 @@ var (
 var StatisticsMeasurementName = "influx.proxy.statistics"
 
 type InfluxCluster struct {
-	lock           sync.RWMutex
 	query_executor *InfluxQLExecutor
 	cfgsrc         *FileConfigSource
 	backends       map[string]BackendAPI
@@ -199,18 +197,8 @@ func (ic *InfluxCluster) LoadConfig() (err error) {
 		return
 	}
 
-	ic.lock.Lock()
-	orig_backends := ic.backends
 	ic.backends = backends
 	ic.m2bs = m2bs
-	ic.lock.Unlock()
-
-	for name, bs := range orig_backends {
-		err = bs.Close()
-		if err != nil {
-			log.Printf("fail in close backend %s", name)
-		}
-	}
 	return
 }
 
@@ -221,9 +209,6 @@ func (ic *InfluxCluster) Ping() (version string, err error) {
 }
 
 func (ic *InfluxCluster) GetBackends(key string) (backends []BackendAPI, ok bool) {
-	ic.lock.RLock()
-	defer ic.lock.RUnlock()
-
 	backends, ok = ic.m2bs[key]
 	// match use prefix
 	if !ok {
@@ -437,8 +422,6 @@ func (ic *InfluxCluster) Write(p []byte, precision string) (err error) {
 }
 
 func (ic *InfluxCluster) Close() (err error) {
-	ic.lock.RLock()
-	defer ic.lock.RUnlock()
 	for name, bs := range ic.backends {
 		err = bs.Close()
 		if err != nil {
