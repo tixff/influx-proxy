@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	VERSION = "1.4.3"
+	VERSION = "1.4.4"
 )
 
 // listen_addr: proxy listen addr, default is ":7076"
