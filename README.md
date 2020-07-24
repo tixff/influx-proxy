@@ -3,7 +3,7 @@ InfluxDB Proxy
 
 This project adds a basic high availability layer to InfluxDB.
 
-NOTE: influx-proxy must be built with Go 1.8+, don't implement udp.
+NOTE: influx-proxy must be built with Go 1.14+ with Go module support, don't implement udp.
 
 Why
 ---
@@ -34,7 +34,7 @@ Features
 Requirements
 -----------
 
-* Golang >= 1.8
+* Golang >= 1.14 with Go module support
 
 Usage
 ------------
@@ -42,9 +42,8 @@ Usage
 #### Quickstart
 
 ```sh
-$ go get -u github.com/chengshiwen/influx-proxy
-$ cd $GOPATH/src/github.com/chengshiwen/influx-proxy
-$ git checkout branch-1.x
+$ git clone -b branch-1.x https://github.com/chengshiwen/influx-proxy.git
+$ cd influx-proxy
 $ make
 $ ./bin/influx-proxy -config proxy.json
 ```
@@ -177,6 +176,14 @@ Only support match the following commands.
 * `delete from`
 * `drop series from`
 * `drop measurement`
+
+Benchmark
+-----------
+
+There are two tools for benchmarking InfluxDB, which can also be applied to InfluxDB Proxy:
+
+* [influx-stress](https://github.com/chengshiwen/influx-stress) is a stress tool for generating artificial load on InfluxDB.
+* [influxdb-comparisons](https://github.com/influxdata/influxdb-comparisons) contains code for benchmarking InfluxDB against other databases and time series solutions.
 
 License
 -------
