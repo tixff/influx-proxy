@@ -27,7 +27,7 @@ test:
 bench:
 	rm -rf data/test
 	mkdir -p data/test
-	go test -bench=. github.com/chengshiwen/influx-proxy/backend
+	go test -bench=. -run=none github.com/chengshiwen/influx-proxy/backend
 
 run:
 	go run main.go

@@ -365,7 +365,7 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
 		return
 	}
 
-	if ScanSpace(line[len(key):]) != 2 {
+	if !CheckSpace(line[len(key):]) {
 		log.Printf("invalid format, drop data: %s", string(line))
 		atomic.AddInt64(&ic.stats.PointsWrittenFail, 1)
 		return
