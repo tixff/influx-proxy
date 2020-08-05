@@ -9,6 +9,8 @@ curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * from 
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * from cpu2'
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * from mem;'
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * from svr'
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * from "measurement with spaces, commas and \"quotes\""'
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * from "\"measurement with spaces, commas and \"quotes\"\""'
 
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show tag keys from cpu1'
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show FIELD keys from cpu2'
