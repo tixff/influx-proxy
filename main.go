@@ -81,7 +81,7 @@ func main() {
 
 	fcs, err := backend.NewFileConfigSource(ConfigFile)
 	if err != nil {
-		fmt.Printf("config file format invalid: %s\n", err)
+		fmt.Printf("illegal config file: %s\n", err)
 		return
 	}
 	if GitCommit == "" {
