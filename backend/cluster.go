@@ -414,7 +414,7 @@ func (ic *InfluxCluster) Write(p []byte, precision string) (err error) {
 			break
 		}
 
-		line = LineToNano(line, precision)
+		line = AppendNano(line, precision)
 		ic.WriteRow(line)
 	}
 
