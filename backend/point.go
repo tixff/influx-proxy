@@ -75,7 +75,7 @@ func BytesToInt64(buf []byte) int64 {
 	return res
 }
 
-func CheckSpace(buf []byte) bool {
+func RapidCheck(buf []byte) bool {
 	buflen := len(buf)
 	// find the first unescaped space, and pick the last for consecutive spaces
 	i := 0
