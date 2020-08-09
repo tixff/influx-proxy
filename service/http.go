@@ -56,11 +56,7 @@ func (hs *HttpService) Register(mux *http.ServeMux) {
 
 func (hs *HttpService) HandlerPing(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	version, err := hs.ic.Ping()
-	if err != nil {
-		panic("WTF")
-		return
-	}
+	version, _ := hs.ic.Ping()
 	w.Header().Add("X-Influxdb-Version", version)
 	w.WriteHeader(204)
 	return

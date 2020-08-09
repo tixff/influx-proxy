@@ -35,6 +35,9 @@ run:
 fmt:
 	go fmt ./...
 
+vet:
+	go vet ./...
+
 clean:
 	rm -rf bin data
 
