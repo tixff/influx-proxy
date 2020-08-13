@@ -32,14 +32,13 @@ bench:
 run:
 	go run main.go
 
-fmt:
+lint:
+	golangci-lint run --enable=golint --disable=errcheck --disable=typecheck
+	goimports -l -w .
 	go fmt ./...
-
-vet:
 	go vet ./...
 
 clean:
 	rm -rf bin data
-
 
 ### Makefile ends here

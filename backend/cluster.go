@@ -24,7 +24,7 @@ var ErrBackendNotExist = errors.New("use a backend not exists")
 var StatisticsMeasurementName = "influx.proxy.statistics"
 
 type InfluxCluster struct {
-	query_executor *InfluxQLExecutor
+	query_executor *InfluxQLExecutor // nolint:golint
 	cfgsrc         *FileConfigSource
 	backends       map[string]BackendAPI
 	m2bs           map[string][]BackendAPI // measurements to backends
@@ -155,7 +155,7 @@ func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, err err
 func (ic *InfluxCluster) loadMeasurements(backends map[string]BackendAPI) (m2bs map[string][]BackendAPI, err error) {
 	m2bs = make(map[string][]BackendAPI)
 
-	m_map, err := ic.cfgsrc.LoadMeasurements()
+	m_map, err := ic.cfgsrc.LoadMeasurements() // nolint:golint
 	if err != nil {
 		return
 	}
@@ -165,6 +165,7 @@ func (ic *InfluxCluster) loadMeasurements(backends map[string]BackendAPI) (m2bs 
 		return
 	}
 
+	// nolint:golint
 	for name, bs_names := range m_map {
 		var bss []BackendAPI
 		for _, bs_name := range bs_names {

@@ -42,7 +42,7 @@ func Compress(buf *bytes.Buffer, p []byte) (err error) {
 	return
 }
 
-type HttpBackend struct { // nolint
+type HttpBackend struct { // nolint:golint
 	client    *http.Client
 	transport *http.Transport
 	URL       string
@@ -55,7 +55,7 @@ type HttpBackend struct { // nolint
 }
 
 // TODO: query timeout? use req.Cancel
-func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) { // nolint
+func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) { // nolint:golint
 	hb = &HttpBackend{
 		client: &http.Client{
 			Transport: NewTransport(strings.HasPrefix(cfg.URL, "https")),

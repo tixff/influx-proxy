@@ -24,10 +24,10 @@ type Backends struct {
 	rewriteInterval int
 	rewriteRunning  bool
 	ticker          *time.Ticker
-	ch_write        chan []byte
-	ch_timer        <-chan time.Time
+	ch_write        chan []byte      // nolint:golint
+	ch_timer        <-chan time.Time // nolint:golint
 	buffer          *bytes.Buffer
-	write_counter   int
+	writeCounter    int
 	wg              sync.WaitGroup
 }
 
@@ -90,7 +90,7 @@ func (bs *Backends) Close() (err error) {
 }
 
 func (bs *Backends) WriteBuffer(p []byte) {
-	bs.write_counter++
+	bs.writeCounter++
 
 	if bs.buffer == nil {
 		bs.buffer = &bytes.Buffer{}
@@ -116,7 +116,7 @@ func (bs *Backends) WriteBuffer(p []byte) {
 	}
 
 	switch {
-	case bs.write_counter >= bs.flushSize:
+	case bs.writeCounter >= bs.flushSize:
 		bs.Flush()
 	case bs.ch_timer == nil:
 		bs.ch_timer = time.After(time.Millisecond * time.Duration(bs.flushTime))
@@ -131,7 +131,7 @@ func (bs *Backends) Flush() {
 	p := bs.buffer.Bytes()
 	bs.buffer = nil
 	bs.ch_timer = nil
-	bs.write_counter = 0
+	bs.writeCounter = 0
 
 	if len(p) == 0 {
 		return

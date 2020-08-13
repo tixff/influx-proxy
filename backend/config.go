@@ -54,7 +54,7 @@ type NodeConfig struct {
 // rewrite_interval: default config is 10000ms, rewrite every 10 seconds
 // conn_pool_size: default config is 20, create a connection pool which size is 20
 // write_only: default is false
-type BackendConfig struct { // nolint
+type BackendConfig struct { // nolint:golint
 	URL             string `json:"url"`
 	DB              string `json:"db"`
 	Username        string `json:"username"`
@@ -156,7 +156,7 @@ func (fcs *FileConfigSource) LoadBackends() (backends map[string]*BackendConfig,
 	return
 }
 
-func (fcs *FileConfigSource) LoadMeasurements() (m_map map[string][]string, err error) {
+func (fcs *FileConfigSource) LoadMeasurements() (m_map map[string][]string, err error) { // nolint:golint
 	m_map = fcs.KEYMAPS
 	log.Printf("%d measurements loaded from file", len(m_map))
 	return

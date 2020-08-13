@@ -14,13 +14,13 @@ import (
 	gzip "github.com/klauspost/pgzip"
 )
 
-type HttpService struct {
+type HttpService struct { // nolint:golint
 	ic       *backend.InfluxCluster
 	username string
 	password string
 }
 
-func NewHttpService(ic *backend.InfluxCluster, nodecfg *backend.NodeConfig) (hs *HttpService) {
+func NewHttpService(ic *backend.InfluxCluster, nodecfg *backend.NodeConfig) (hs *HttpService) { // nolint:golint
 	hs = &HttpService{
 		ic:       ic,
 		username: nodecfg.Username,

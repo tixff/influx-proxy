@@ -49,7 +49,7 @@ func NewFileBackend(filename string, datadir string) (fb *FileBackend, err error
 	}
 
 	fb.RollbackMeta()
-	off_producer, _ := fb.producer.Seek(0, io.SeekEnd)
+	off_producer, _ := fb.producer.Seek(0, io.SeekEnd) // nolint:golint
 	off, _ := fb.consumer.Seek(0, io.SeekCurrent)
 	fb.dataflag = off_producer > off
 	return
@@ -149,7 +149,7 @@ func (fb *FileBackend) UpdateMeta() (err error) {
 	fb.lock.Lock()
 	defer fb.lock.Unlock()
 
-	off_producer, err := fb.producer.Seek(0, io.SeekCurrent)
+	off_producer, err := fb.producer.Seek(0, io.SeekCurrent) // nolint:golint
 	if err != nil {
 		log.Print("seek producer error: ", err)
 		return
