@@ -24,7 +24,6 @@ type Backends struct {
 	rewriteInterval int
 	rewriteRunning  bool
 	ticker          *time.Ticker
-	running         bool
 	ch_write        chan []byte
 	ch_timer        <-chan time.Time
 	buffer          *bytes.Buffer
@@ -41,7 +40,6 @@ func NewBackends(cfg *BackendConfig, name string, datadir string) (bs *Backends,
 		rewriteInterval: cfg.RewriteInterval,
 		rewriteRunning:  false,
 		ticker:          time.NewTicker(time.Millisecond * time.Duration(cfg.RewriteInterval)),
-		running:         true,
 		ch_write:        make(chan []byte, 16),
 	}
 	bs.fb, err = NewFileBackend(name, datadir)
@@ -58,7 +56,7 @@ func NewBackends(cfg *BackendConfig, name string, datadir string) (bs *Backends,
 }
 
 func (bs *Backends) worker() {
-	for bs.running {
+	for {
 		select {
 		case p, ok := <-bs.ch_write:
 			if !ok {
@@ -73,12 +71,6 @@ func (bs *Backends) worker() {
 
 		case <-bs.ch_timer:
 			bs.Flush()
-			if !bs.running {
-				bs.wg.Wait()
-				bs.HttpBackend.Close()
-				bs.fb.Close()
-				return
-			}
 
 		case <-bs.ticker.C:
 			bs.Idle()
@@ -87,16 +79,11 @@ func (bs *Backends) worker() {
 }
 
 func (bs *Backends) Write(p []byte) (err error) {
-	if !bs.running {
-		return io.ErrClosedPipe
-	}
-
 	bs.ch_write <- p
 	return
 }
 
 func (bs *Backends) Close() (err error) {
-	bs.running = false
 	bs.pool.Release()
 	close(bs.ch_write)
 	return
@@ -199,9 +186,6 @@ func (bs *Backends) Idle() {
 
 func (bs *Backends) RewriteLoop() {
 	for bs.fb.IsData() {
-		if !bs.running {
-			return
-		}
 		if !bs.HttpBackend.IsActive() {
 			time.Sleep(time.Millisecond * time.Duration(bs.rewriteInterval))
 			continue

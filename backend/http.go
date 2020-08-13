@@ -51,7 +51,6 @@ type HttpBackend struct { // nolint
 	Password  string
 	interval  int
 	active    bool
-	running   bool
 	writeOnly bool
 }
 
@@ -69,7 +68,6 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) { // nolint
 		Password:  cfg.Password,
 		interval:  cfg.CheckInterval,
 		active:    true,
-		running:   true,
 		writeOnly: cfg.WriteOnly,
 	}
 	go hb.CheckActive()
@@ -94,7 +92,7 @@ func NewTransport(tlsSkip bool) (transport *http.Transport) {
 // TODO: update active when calling successed or failed.
 func (hb *HttpBackend) CheckActive() {
 	var err error
-	for hb.running {
+	for {
 		_, err = hb.Ping()
 		hb.active = err == nil
 		time.Sleep(time.Millisecond * time.Duration(hb.interval))
@@ -299,7 +297,6 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 }
 
 func (hb *HttpBackend) Close() (err error) {
-	hb.running = false
 	hb.transport.CloseIdleConnections()
 	return
 }
