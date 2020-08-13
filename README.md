@@ -141,8 +141,8 @@ The configurations in `proxy.json` are the following:
 * `write_tracing`: enable logging for the write, default is false
 * `query_tracing`: enable logging for the query, default is false
 * `https_enabled`: enable https, default is false
-* `https_cert`: the ssl certificate to use when https is enabled
-* `https_key`: use a separate private key location
+* `https_cert`: the ssl certificate to use when https is enabled, default is ""
+* `https_key`: use a separate private key location, default is ""
 
 Query Commands
 --------

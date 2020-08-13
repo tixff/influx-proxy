@@ -14,19 +14,6 @@ const (
 	VERSION = "1.4.4"
 )
 
-// listen_addr: proxy listen addr, default is ":7076"
-// db: proxy db, client's db must be same with it, default is "" for no limit
-// username: proxy username, default is "" for no auth
-// password: proxy password, default is "" for no auth
-// data_dir: data dir to save .dat .rec, default is "data"
-// log_path: log file path, default "" for stdout
-// idle_timeout: keep-alives wait time, default is 10000ms
-// stat_interval: interval to collect statistics, default is 10000ms
-// write_tracing: enable logging for the write, default is false
-// query_tracing: enable logging for the query, default is false
-// https_enabled: enable https, default is false
-// https_cert: the ssl certificate to use when https is enabled
-// https_key: use a separate private key location
 type NodeConfig struct {
 	ListenAddr   string `json:"listen_addr"`
 	DB           string `json:"db"`
@@ -43,17 +30,6 @@ type NodeConfig struct {
 	HTTPSKey     string `json:"https_key"`
 }
 
-// url: influxdb addr or other http backend which supports influxdb line protocol
-// db: influxdb db
-// username: influxdb username, default is "" for no auth
-// password: influxdb password, default is "" for no auth
-// flush_size: default config is 10000, wait 10000 points write
-// flush_time: default config is 1000ms, wait 1 second write whether point count has bigger than flush_size config
-// timeout: default config is 10000ms, write timeout until 10 seconds
-// check_interval: default config is 1000ms, check backend active every 1 second
-// rewrite_interval: default config is 10000ms, rewrite every 10 seconds
-// conn_pool_size: default config is 20, create a connection pool which size is 20
-// write_only: default is false
 type BackendConfig struct { // nolint:golint
 	URL             string `json:"url"`
 	DB              string `json:"db"`
@@ -70,17 +46,7 @@ type BackendConfig struct { // nolint:golint
 
 // KEYMAPS
 // measurement: [BACKENDS keys], the key must be in the BACKENDS
-// http request with the measurement matching the following principles will be forwarded to the backends
-// exact match first:
-//      for instance, we use cpu.load for measurement's name
-//      The KEYMAPS has cpu and cpu.load keys, it will use the cpu.load corresponding backends
-// prefix match then:
-//      for instance, we use cpu.load for measurement's name
-//      the KEYMAPS only has cpu key, it will use the cpu corresponding backends
-// _default_ match finally:
-//      if the measurement don't match the above principles, it will use the _default_ corresponding backends
 
-// BACKENDS, KEYMAPS, NODE
 type FileConfigSource struct {
 	BACKENDS map[string]BackendConfig
 	KEYMAPS  map[string][]string
