@@ -265,7 +265,11 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte) (rsp *Response, err
 		for _, value := range valuesMap {
 			values = append(values, value)
 		}
-		series[0].Values = values
+		if len(values) > 0 {
+			series[0].Values = values
+		} else {
+			series = nil
+		}
 	}
 	return ResponseFromSeries(series), nil
 }
