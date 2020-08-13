@@ -182,7 +182,7 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 		}
 		apis, ok := iqe.ic.GetBackends(key)
 		if !ok {
-			return errors.New(fmt.Sprintf("unknown measurement: %s, query: %s", key, req.FormValue("q")))
+			return fmt.Errorf("unknown measurement: %s, query: %s", key, req.FormValue("q"))
 		}
 		for _, api := range apis {
 			if !api.IsActive() {
@@ -262,9 +262,7 @@ func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rsp *Response, err
 		}
 		if len(_series) == 1 {
 			series = _series
-			for _, value := range _series[0].Values {
-				values = append(values, value)
-			}
+			values = append(values, _series[0].Values...)
 		}
 	}
 	if len(series) == 1 {

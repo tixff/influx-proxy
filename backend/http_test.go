@@ -30,7 +30,6 @@ func HandlerAny(w http.ResponseWriter, req *http.Request) {
 		}})
 		w.Write(rsp.Marshal(false))
 	}
-	return
 }
 
 func CreateTestBackendConfig(dbname string) (cfg *BackendConfig, ts *httptest.Server) {
@@ -94,7 +93,6 @@ func TestHttpBackendPing(t *testing.T) {
 	if version == "" {
 		t.Errorf("empty version")
 	}
-	return
 }
 
 type DummyResponseWriter struct {
@@ -121,7 +119,6 @@ func (drw *DummyResponseWriter) Write(p []byte) (n int, err error) {
 
 func (drw *DummyResponseWriter) WriteHeader(code int) {
 	drw.status = code
-	return
 }
 
 func TestHttpBackendQuery(t *testing.T) {

@@ -19,12 +19,7 @@ import (
 	"github.com/chengshiwen/influx-proxy/monitor"
 )
 
-var (
-	ErrClosed          = errors.New("write in a closed file")
-	ErrBackendNotExist = errors.New("use a backend not exists")
-	ErrQueryForbidden  = errors.New("query forbidden")
-	ErrNotClusterQuery = errors.New("not a cluster query")
-)
+var ErrBackendNotExist = errors.New("use a backend not exists")
 
 var StatisticsMeasurementName = "influx.proxy.statistics"
 
@@ -387,7 +382,6 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
 			return
 		}
 	}
-	return
 }
 
 func (ic *InfluxCluster) Write(p []byte, precision string) (err error) {

@@ -16,33 +16,33 @@ import (
 
 type Backends struct {
 	*HttpBackend
-	fb              *FileBackend
-	pool            *ants.Pool
-	FlushSize       int
-	FlushTime       int
-	RewriteInterval int
+	fb   *FileBackend
+	pool *ants.Pool
 
-	running          bool
-	ticker           *time.Ticker
-	ch_write         chan []byte
-	buffer           *bytes.Buffer
-	ch_timer         <-chan time.Time
-	write_counter    int
-	rewriter_running bool
-	wg               sync.WaitGroup
+	flushSize       int
+	flushTime       int
+	rewriteInterval int
+	rewriteRunning  bool
+	ticker          *time.Ticker
+	running         bool
+	ch_write        chan []byte
+	ch_timer        <-chan time.Time
+	buffer          *bytes.Buffer
+	write_counter   int
+	wg              sync.WaitGroup
 }
 
 // maybe ch_timer is not the best way.
 func NewBackends(cfg *BackendConfig, name string, datadir string) (bs *Backends, err error) {
 	bs = &Backends{
-		HttpBackend:      NewHttpBackend(cfg),
-		FlushSize:        cfg.FlushSize,
-		FlushTime:        cfg.FlushTime,
-		RewriteInterval:  cfg.RewriteInterval,
-		running:          true,
-		ticker:           time.NewTicker(time.Millisecond * time.Duration(cfg.RewriteInterval)),
-		ch_write:         make(chan []byte, 16),
-		rewriter_running: false,
+		HttpBackend:     NewHttpBackend(cfg),
+		flushSize:       cfg.FlushSize,
+		flushTime:       cfg.FlushTime,
+		rewriteInterval: cfg.RewriteInterval,
+		rewriteRunning:  false,
+		ticker:          time.NewTicker(time.Millisecond * time.Duration(cfg.RewriteInterval)),
+		running:         true,
+		ch_write:        make(chan []byte, 16),
 	}
 	bs.fb, err = NewFileBackend(name, datadir)
 	if err != nil {
@@ -129,13 +129,11 @@ func (bs *Backends) WriteBuffer(p []byte) {
 	}
 
 	switch {
-	case bs.write_counter >= bs.FlushSize:
+	case bs.write_counter >= bs.flushSize:
 		bs.Flush()
 	case bs.ch_timer == nil:
-		bs.ch_timer = time.After(time.Millisecond * time.Duration(bs.FlushTime))
+		bs.ch_timer = time.After(time.Millisecond * time.Duration(bs.flushTime))
 	}
-
-	return
 }
 
 func (bs *Backends) Flush() {
@@ -188,13 +186,11 @@ func (bs *Backends) Flush() {
 		// don't try to run rewrite loop directly.
 		// that need a lock.
 	})
-
-	return
 }
 
 func (bs *Backends) Idle() {
-	if !bs.rewriter_running && bs.fb.IsData() {
-		bs.rewriter_running = true
+	if !bs.rewriteRunning && bs.fb.IsData() {
+		bs.rewriteRunning = true
 		go bs.RewriteLoop()
 	}
 
@@ -207,16 +203,16 @@ func (bs *Backends) RewriteLoop() {
 			return
 		}
 		if !bs.HttpBackend.IsActive() {
-			time.Sleep(time.Millisecond * time.Duration(bs.RewriteInterval))
+			time.Sleep(time.Millisecond * time.Duration(bs.rewriteInterval))
 			continue
 		}
 		err := bs.Rewrite()
 		if err != nil {
-			time.Sleep(time.Millisecond * time.Duration(bs.RewriteInterval))
+			time.Sleep(time.Millisecond * time.Duration(bs.rewriteInterval))
 			continue
 		}
 	}
-	bs.rewriter_running = false
+	bs.rewriteRunning = false
 }
 
 func (bs *Backends) Rewrite() (err error) {

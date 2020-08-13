@@ -10,7 +10,7 @@ type Querier interface {
 	Query(w http.ResponseWriter, req *http.Request) (err error)
 }
 
-type BackendAPI interface {
+type BackendAPI interface { // nolint
 	Querier
 	IsActive() (b bool)
 	IsWriteOnly() (b bool)

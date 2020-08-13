@@ -42,35 +42,35 @@ func Compress(buf *bytes.Buffer, p []byte) (err error) {
 	return
 }
 
-type HttpBackend struct {
+type HttpBackend struct { // nolint
 	client    *http.Client
 	transport *http.Transport
-	Interval  int
 	URL       string
 	DB        string
 	Username  string
 	Password  string
-	Active    bool
+	interval  int
+	active    bool
 	running   bool
-	WriteOnly bool
+	writeOnly bool
 }
 
 // TODO: query timeout? use req.Cancel
-func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
+func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) { // nolint
 	hb = &HttpBackend{
 		client: &http.Client{
 			Transport: NewTransport(cfg.ConnPoolSize, strings.HasPrefix(cfg.URL, "https")),
 			Timeout:   time.Millisecond * time.Duration(cfg.Timeout),
 		},
 		transport: NewTransport(cfg.ConnPoolSize, strings.HasPrefix(cfg.URL, "https")),
-		Interval:  cfg.CheckInterval,
 		URL:       cfg.URL,
 		DB:        cfg.DB,
 		Username:  cfg.Username,
 		Password:  cfg.Password,
-		Active:    true,
+		interval:  cfg.CheckInterval,
+		active:    true,
 		running:   true,
-		WriteOnly: cfg.WriteOnly,
+		writeOnly: cfg.WriteOnly,
 	}
 	go hb.CheckActive()
 	return
@@ -96,17 +96,17 @@ func (hb *HttpBackend) CheckActive() {
 	var err error
 	for hb.running {
 		_, err = hb.Ping()
-		hb.Active = err == nil
-		time.Sleep(time.Millisecond * time.Duration(hb.Interval))
+		hb.active = err == nil
+		time.Sleep(time.Millisecond * time.Duration(hb.interval))
 	}
 }
 
 func (hb *HttpBackend) IsWriteOnly() bool {
-	return hb.WriteOnly
+	return hb.writeOnly
 }
 
 func (hb *HttpBackend) IsActive() bool {
-	return hb.Active
+	return hb.active
 }
 
 func (hb *HttpBackend) Ping() (version string, err error) {
@@ -162,7 +162,7 @@ func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status 
 	resp, err := hb.transport.RoundTrip(req)
 	if err != nil {
 		log.Printf("query error: %s, the query is %s\n", err, q)
-		hb.Active = false
+		hb.active = false
 		return
 	}
 	defer resp.Body.Close()
@@ -170,11 +170,11 @@ func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status 
 	respBody := resp.Body
 	if resp.Header.Get("Content-Encoding") == "gzip" {
 		respBody, err = gzip.NewReader(resp.Body)
-		defer respBody.Close()
 		if err != nil {
 			log.Printf("unable to decode gzip body\n")
 			return
 		}
+		defer respBody.Close()
 	}
 
 	body, err = ioutil.ReadAll(respBody)
@@ -211,7 +211,7 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
 	resp, err := hb.transport.RoundTrip(req)
 	if err != nil {
 		log.Printf("query error: %s, the query is %s\n", err, q)
-		hb.Active = false
+		hb.active = false
 		return
 	}
 	defer resp.Body.Close()
@@ -264,7 +264,7 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 	resp, err := hb.client.Do(req)
 	if err != nil {
 		log.Print("http error: ", err)
-		hb.Active = false
+		hb.active = false
 		return
 	}
 	defer resp.Body.Close()

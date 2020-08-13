@@ -15,16 +15,16 @@ import (
 )
 
 type HttpService struct {
+	ic       *backend.InfluxCluster
 	username string
 	password string
-	ic       *backend.InfluxCluster
 }
 
 func NewHttpService(ic *backend.InfluxCluster, nodecfg *backend.NodeConfig) (hs *HttpService) {
 	hs = &HttpService{
+		ic:       ic,
 		username: nodecfg.Username,
 		password: nodecfg.Password,
-		ic:       ic,
 	}
 	if hs.ic.DB != "" {
 		log.Print("http database: ", hs.ic.DB)
@@ -59,7 +59,6 @@ func (hs *HttpService) HandlerPing(w http.ResponseWriter, req *http.Request) {
 	version, _ := hs.ic.Ping()
 	w.Header().Add("X-Influxdb-Version", version)
 	w.WriteHeader(204)
-	return
 }
 
 func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
@@ -81,8 +80,6 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 	if hs.ic.QueryTracing {
 		log.Printf("the query is %s, the client is %s\n", q, req.RemoteAddr)
 	}
-
-	return
 }
 
 func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
@@ -143,5 +140,4 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	if hs.ic.WriteTracing {
 		log.Printf("write body received by handler: %s, the client is %s\n", p, req.RemoteAddr)
 	}
-	return
 }

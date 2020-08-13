@@ -54,7 +54,7 @@ type NodeConfig struct {
 // rewrite_interval: default config is 10000ms, rewrite every 10 seconds
 // conn_pool_size: default config is 20, create a connection pool which size is 20
 // write_only: default is false
-type BackendConfig struct {
+type BackendConfig struct { // nolint
 	URL             string `json:"url"`
 	DB              string `json:"db"`
 	Username        string `json:"username"`

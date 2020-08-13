@@ -17,7 +17,7 @@ func readAndProcess(t *testing.T, fb *FileBackend, s string, l int64) {
 		return
 	}
 
-	if bytes.Compare(p, []byte(s)) != 0 {
+	if !bytes.Equal(p, []byte(s)) {
 		t.Errorf("error: %s", err)
 		return
 	}
@@ -38,8 +38,6 @@ func readAndProcess(t *testing.T, fb *FileBackend, s string, l int64) {
 		t.Errorf("size not match")
 		return
 	}
-
-	return
 }
 
 func TestFileBackend(t *testing.T) {

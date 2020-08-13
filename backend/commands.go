@@ -4,7 +4,7 @@
 
 package backend
 
-import "github.com/deckarep/golang-set"
+import mapset "github.com/deckarep/golang-set"
 
 var SupportCmds = mapset.NewSet(
 	"show measurements",

@@ -37,8 +37,6 @@ func TestScanKey(t *testing.T) {
 			return
 		}
 	}
-
-	return
 }
 
 func BenchmarkScanKey(b *testing.B) {
