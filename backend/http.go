@@ -59,10 +59,10 @@ type HttpBackend struct { // nolint
 func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) { // nolint
 	hb = &HttpBackend{
 		client: &http.Client{
-			Transport: NewTransport(cfg.ConnPoolSize, strings.HasPrefix(cfg.URL, "https")),
+			Transport: NewTransport(strings.HasPrefix(cfg.URL, "https")),
 			Timeout:   time.Millisecond * time.Duration(cfg.Timeout),
 		},
-		transport: NewTransport(cfg.ConnPoolSize, strings.HasPrefix(cfg.URL, "https")),
+		transport: NewTransport(strings.HasPrefix(cfg.URL, "https")),
 		URL:       cfg.URL,
 		DB:        cfg.DB,
 		Username:  cfg.Username,
@@ -76,15 +76,15 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) { // nolint
 	return
 }
 
-func NewTransport(connSize int, tlsSkip bool) (transport *http.Transport) {
+func NewTransport(tlsSkip bool) (transport *http.Transport) {
 	return &http.Transport{
 		DialContext: (&net.Dialer{
 			Timeout:   time.Second * 30,
 			KeepAlive: time.Second * 30,
 		}).DialContext,
-		MaxIdleConns:          connSize * 2,
-		MaxIdleConnsPerHost:   connSize * 2,
-		IdleConnTimeout:       time.Second * 60,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   100,
+		IdleConnTimeout:       time.Second * 90,
 		TLSHandshakeTimeout:   time.Second * 10,
 		ExpectContinueTimeout: time.Second * 1,
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: tlsSkip},
