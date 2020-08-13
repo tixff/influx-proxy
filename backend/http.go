@@ -42,6 +42,13 @@ func Compress(buf *bytes.Buffer, p []byte) (err error) {
 	return
 }
 
+type QueryResult struct {
+	Header http.Header
+	Status int
+	Body   []byte
+	Err    error
+}
+
 type HttpBackend struct { // nolint:golint
 	client    *http.Client
 	transport *http.Transport
@@ -139,7 +146,8 @@ func copyHeader(dst, src http.Header) {
 	}
 }
 
-func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status int, body []byte, err error) {
+func (hb *HttpBackend) QuerySink(req *http.Request) (qr *QueryResult) {
+	qr = &QueryResult{}
 	if len(req.Form) == 0 {
 		req.Form = url.Values{}
 	}
@@ -150,16 +158,17 @@ func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status 
 		req.Form.Set("p", hb.Password)
 	}
 
-	req.URL, err = url.Parse(hb.URL + "/query?" + req.Form.Encode())
-	if err != nil {
-		log.Print("internal url parse error: ", err)
+	req.URL, qr.Err = url.Parse(hb.URL + "/query?" + req.Form.Encode())
+	if qr.Err != nil {
+		log.Print("internal url parse error: ", qr.Err)
 		return
 	}
 
 	q := strings.TrimSpace(req.FormValue("q"))
-	resp, err := hb.transport.RoundTrip(req)
-	if err != nil {
-		log.Printf("query error: %s, the query is %s\n", err, q)
+	var resp *http.Response
+	resp, qr.Err = hb.transport.RoundTrip(req)
+	if qr.Err != nil {
+		log.Printf("query error: %s, the query is %s\n", qr.Err, q)
 		hb.active = false
 		return
 	}
@@ -167,22 +176,22 @@ func (hb *HttpBackend) QueryResp(req *http.Request) (header http.Header, status 
 
 	respBody := resp.Body
 	if resp.Header.Get("Content-Encoding") == "gzip" {
-		respBody, err = gzip.NewReader(resp.Body)
-		if err != nil {
+		respBody, qr.Err = gzip.NewReader(resp.Body)
+		if qr.Err != nil {
 			log.Printf("unable to decode gzip body\n")
 			return
 		}
 		defer respBody.Close()
 	}
 
-	body, err = ioutil.ReadAll(respBody)
-	if err != nil {
-		log.Printf("read body error: %s, the query is %s\n", err, q)
+	qr.Body, qr.Err = ioutil.ReadAll(respBody)
+	if qr.Err != nil {
+		log.Printf("read body error: %s, the query is %s\n", qr.Err, q)
 		return
 	}
 
-	header = resp.Header
-	status = resp.StatusCode
+	qr.Header = resp.Header
+	qr.Status = resp.StatusCode
 	return
 }
 

@@ -12,7 +12,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/influxdata/influxdb1-client/models"
 	gzip "github.com/klauspost/pgzip"
@@ -63,6 +65,24 @@ func WriteResponse(w http.ResponseWriter, req *http.Request, rsp *Response, head
 	}
 }
 
+func CloneForm(f url.Values) (cf url.Values) {
+	cf = make(url.Values, len(f))
+	for k, v := range f {
+		nv := make([]string, len(v))
+		copy(nv, v)
+		cf[k] = nv
+	}
+	return
+}
+
+func querySink(api BackendAPI, req http.Request, bodyBytes []byte, result chan *QueryResult, wg *sync.WaitGroup) {
+	defer wg.Done()
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	req.Form = CloneForm(req.Form)
+	qr := api.QuerySink(&req)
+	result <- qr
+}
+
 func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
 	stmt := strings.ToLower(tokens[0])
 	if stmt == "show" {
@@ -79,11 +99,13 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tok
 func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
 	// remove support of query parameter `chunked`
 	req.Form.Del("chunked")
-	reqBodyBytes := ReadBodyBytes(req)
+	bodyBytes := ReadBodyBytes(req)
 	var header http.Header
 	var status int
 	var bodies [][]byte
 	var inactive int
+	result := make(chan *QueryResult, len(iqe.ic.backends))
+	wg := &sync.WaitGroup{}
 	for _, api := range iqe.ic.backends {
 		if api.IsWriteOnly() {
 			continue
@@ -92,20 +114,24 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 			inactive++
 			continue
 		}
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
-		_header, _status, _body, err := api.QueryResp(req)
-		if _status >= http.StatusBadRequest {
-			copyHeader(w.Header(), _header)
-			w.WriteHeader(_status)
-			w.Write(_body)
+		wg.Add(1)
+		go querySink(api, *req, bodyBytes, result, wg)
+	}
+	wg.Wait()
+	close(result)
+	for qr := range result {
+		if qr.Status >= http.StatusBadRequest {
+			copyHeader(w.Header(), qr.Header)
+			w.WriteHeader(qr.Status)
+			w.Write(qr.Body)
 			return nil
 		}
-		if err != nil {
-			return err
+		if qr.Err != nil {
+			return qr.Err
 		}
-		header = _header
-		status = _status
-		bodies = append(bodies, _body)
+		header = qr.Header
+		status = qr.Status
+		bodies = append(bodies, qr.Body)
 	}
 
 	var rsp *Response
@@ -137,18 +163,19 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 }
 
 func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
-	reqBodyBytes := ReadBodyBytes(req)
+	bodyBytes := ReadBodyBytes(req)
 	rsp := ResponseFromSeries(nil)
 	var header http.Header
 	var inactive int
 	if GetHeadStmtFromTokens(tokens, 2) == "create database" {
+		result := make(chan *QueryResult, len(iqe.ic.backends))
+		wg := &sync.WaitGroup{}
 		for _, api := range iqe.ic.backends {
 			if !api.IsActive() {
 				inactive++
 				continue
 			}
 			hb := api.(*Backends)
-			req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
 			req.Form.Del("db")
 			if len(tokens) >= 3 {
 				tokens[2] = hb.DB
@@ -156,11 +183,16 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 			} else {
 				req.Form.Set("q", "create database "+hb.DB)
 			}
-			_header, _, _, err := api.QueryResp(req)
-			if err != nil {
-				return err
+			wg.Add(1)
+			go querySink(api, *req, bodyBytes, result, wg)
+		}
+		wg.Wait()
+		close(result)
+		for qr := range result {
+			if qr.Err != nil {
+				return qr.Err
 			}
-			header = _header
+			header = qr.Header
 		}
 		if inactive > 0 {
 			rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(iqe.ic.backends))
@@ -171,7 +203,7 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 }
 
 func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
-	reqBodyBytes := ReadBodyBytes(req)
+	bodyBytes := ReadBodyBytes(req)
 	rsp := ResponseFromSeries(nil)
 	var header http.Header
 	var inactive int
@@ -184,17 +216,23 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 		if !ok {
 			return fmt.Errorf("unknown measurement: %s, query: %s", key, req.FormValue("q"))
 		}
+		result := make(chan *QueryResult, len(iqe.ic.backends))
+		wg := &sync.WaitGroup{}
 		for _, api := range apis {
 			if !api.IsActive() {
 				inactive++
 				continue
 			}
-			req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
-			_header, _, _, err := api.QueryResp(req)
-			if err != nil {
-				return err
+			wg.Add(1)
+			go querySink(api, *req, bodyBytes, result, wg)
+		}
+		wg.Wait()
+		close(result)
+		for qr := range result {
+			if qr.Err != nil {
+				return qr.Err
 			}
-			header = _header
+			header = qr.Header
 		}
 		if inactive > 0 {
 			rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(apis))

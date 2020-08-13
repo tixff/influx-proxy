@@ -17,5 +17,5 @@ type BackendAPI interface { // nolint:golint
 	Ping() (version string, err error)
 	Write(p []byte) (err error)
 	Close() (err error)
-	QueryResp(req *http.Request) (header http.Header, status int, body []byte, err error)
+	QuerySink(req *http.Request) (qr *QueryResult)
 }
