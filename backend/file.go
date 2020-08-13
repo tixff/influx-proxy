@@ -29,32 +29,26 @@ func NewFileBackend(filename string, datadir string) (fb *FileBackend, err error
 		datadir:  datadir,
 	}
 
-	fb.producer, err = os.OpenFile(filepath.Join(datadir, filename+".dat"),
-		os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	pathname := filepath.Join(datadir, filename)
+	fb.producer, err = os.OpenFile(pathname+".dat", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		log.Print("open producer error: ", err)
 		return
 	}
 
-	fb.consumer, err = os.OpenFile(filepath.Join(datadir, filename+".dat"),
-		os.O_RDONLY, 0644)
+	fb.consumer, err = os.OpenFile(pathname+".dat", os.O_RDONLY, 0644)
 	if err != nil {
 		log.Print("open consumer error: ", err)
 		return
 	}
 
-	fb.meta, err = os.OpenFile(filepath.Join(datadir, filename+".rec"),
-		os.O_RDWR|os.O_CREATE, 0644)
+	fb.meta, err = os.OpenFile(pathname+".rec", os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Print("open meta error: ", err)
 		return
 	}
 
-	err = fb.RollbackMeta()
-	if err != nil {
-		err = nil
-	}
-
+	fb.RollbackMeta()
 	off_producer, _ := fb.producer.Seek(0, io.SeekEnd)
 	off, _ := fb.consumer.Seek(0, io.SeekCurrent)
 	fb.dataflag = off_producer > off
@@ -140,8 +134,8 @@ func (fb *FileBackend) CleanUp() (err error) {
 		return
 	}
 
-	fb.producer, err = os.OpenFile(filepath.Join(fb.datadir, fb.filename+".dat"),
-		os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	pathname := filepath.Join(fb.datadir, fb.filename)
+	fb.producer, err = os.OpenFile(pathname+".dat", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		log.Print("open producer error: ", err)
 		return
