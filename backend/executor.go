@@ -47,7 +47,18 @@ func ReadBodyBytes(req *http.Request) (bodyBytes []byte) {
 	return
 }
 
-func WriteResponse(w http.ResponseWriter, req *http.Request, rsp *Response, header http.Header, status int) {
+func Write(w http.ResponseWriter, req *http.Request, rsp *Response, gzip bool) {
+	pretty := req.FormValue("pretty") == "true"
+	body := rsp.Marshal(pretty)
+	if gzip {
+		gzipBody, _ := GzipCompress(body)
+		w.Write(gzipBody)
+	} else {
+		w.Write(body)
+	}
+}
+
+func WriteResp(w http.ResponseWriter, req *http.Request, rsp *Response, header http.Header, status int) {
 	copyHeader(w.Header(), header)
 	if status > 0 {
 		w.WriteHeader(status)
@@ -55,14 +66,17 @@ func WriteResponse(w http.ResponseWriter, req *http.Request, rsp *Response, head
 	if rsp == nil {
 		rsp = ResponseFromSeries(nil)
 	}
-	pretty := req.FormValue("pretty") == "true"
-	body := rsp.Marshal(pretty)
-	if header.Get("Content-Encoding") == "gzip" {
-		gzipBody, _ := GzipCompress(body)
-		w.Write(gzipBody)
-	} else {
-		w.Write(body)
+	Write(w, req, rsp, header.Get("Content-Encoding") == "gzip")
+}
+
+func WriteError(w http.ResponseWriter, req *http.Request, status int, err string) {
+	w.Header().Set("X-Influxdb-Error", err)
+	if req.Header.Get("Accept-Encoding") == "gzip" {
+		w.Header().Set("Content-Encoding", "gzip")
 	}
+	w.WriteHeader(status)
+	rsp := &Response{Err: err}
+	Write(w, req, rsp, req.Header.Get("Accept-Encoding") == "gzip")
 }
 
 func CloneForm(f url.Values) (cf url.Values) {
@@ -92,7 +106,7 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tok
 	} else if stmt == "delete" || stmt == "drop" {
 		return iqe.QueryDeleteOrDropQL(w, req, tokens)
 	}
-	WriteResponse(w, req, nil, nil, http.StatusOK)
+	WriteResp(w, req, nil, nil, http.StatusOK)
 	return
 }
 
@@ -158,7 +172,7 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 	if inactive > 0 {
 		rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, inactive+len(bodies))
 	}
-	WriteResponse(w, req, rsp, header, status)
+	WriteResp(w, req, rsp, header, status)
 	return
 }
 
@@ -198,7 +212,7 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 			rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(iqe.ic.backends))
 		}
 	}
-	WriteResponse(w, req, rsp, header, http.StatusOK)
+	WriteResp(w, req, rsp, header, http.StatusOK)
 	return
 }
 
@@ -238,7 +252,7 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 			rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(apis))
 		}
 	}
-	WriteResponse(w, req, rsp, header, http.StatusOK)
+	WriteResp(w, req, rsp, header, http.StatusOK)
 	return
 }
 

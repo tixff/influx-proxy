@@ -233,8 +233,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	switch req.Method {
 	case "GET", "POST":
 	default:
-		w.WriteHeader(400)
-		w.Write([]byte("illegal method\n"))
+		WriteError(w, req, 400, "illegal method")
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return
 	}
@@ -242,16 +241,14 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	// TODO: multi queries in q?
 	q := strings.TrimSpace(req.FormValue("q"))
 	if q == "" {
-		w.WriteHeader(400)
-		w.Write([]byte("empty query\n"))
+		WriteError(w, req, 400, "empty query")
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return
 	}
 
 	tokens, check, from := CheckQuery(q)
 	if !check {
-		w.WriteHeader(400)
-		w.Write([]byte("query forbidden\n"))
+		WriteError(w, req, 400, "query forbidden")
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return
 	}
@@ -265,14 +262,12 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	}
 	if !showDb {
 		if db == "" {
-			w.WriteHeader(400)
-			w.Write([]byte("database not found\n"))
+			WriteError(w, req, 400, "database not found")
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 			return
 		}
 		if ic.DB != "" && db != ic.DB {
-			w.WriteHeader(400)
-			w.Write([]byte("database forbidden\n"))
+			WriteError(w, req, 400, "database forbidden")
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 			return
 		}
@@ -282,8 +277,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 		err = ic.query_executor.Query(w, req, tokens)
 		if err != nil {
 			log.Print("query executor error: ", err)
-			w.WriteHeader(400)
-			w.Write([]byte("query executor error\n"))
+			WriteError(w, req, 400, "query executor error")
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		}
 		return
@@ -292,8 +286,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	key, err := GetMeasurementFromTokens(tokens)
 	if err != nil {
 		log.Printf("can't get measurement: %s\n", q)
-		w.WriteHeader(400)
-		w.Write([]byte("can't get measurement\n"))
+		WriteError(w, req, 400, "can't get measurement")
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return
 	}
@@ -301,8 +294,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	apis, ok := ic.GetBackends(key)
 	if !ok {
 		log.Printf("unknown measurement: %s, the query is %s\n", key, q)
-		w.WriteHeader(400)
-		w.Write([]byte("unknown measurement\n"))
+		WriteError(w, req, 400, "unknown measurement")
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return
 	}
@@ -328,7 +320,6 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 		}
 	}
 
-	w.WriteHeader(400)
 	if err == nil {
 		backends := make([]string, len(apis))
 		for i, api := range apis {
@@ -336,9 +327,9 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 			backends[i] = hb.URL
 		}
 		log.Printf("backends not active: %+v, query: %s, measurement: %s", backends, q, key)
-		w.Write([]byte("backends not active\n"))
+		WriteError(w, req, 400, "backends not active")
 	} else {
-		w.Write([]byte("query error\n"))
+		WriteError(w, req, 400, "query error")
 	}
 	atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 	return

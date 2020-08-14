@@ -66,8 +66,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
 	if !hs.checkAuth(req) {
-		w.WriteHeader(401)
-		w.Write([]byte("authentication failed\n"))
+		backend.WriteError(w, req, 401, "authentication failed")
 		return
 	}
 
@@ -87,14 +86,12 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
 	if !hs.checkAuth(req) {
-		w.WriteHeader(401)
-		w.Write([]byte("authentication failed\n"))
+		backend.WriteError(w, req, 401, "authentication failed")
 		return
 	}
 
 	if req.Method != "POST" {
-		w.WriteHeader(405)
-		w.Write([]byte("method not allow\n"))
+		backend.WriteError(w, req, 405, "method not allow")
 		return
 	}
 
@@ -104,13 +101,11 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	}
 	db := req.URL.Query().Get("db")
 	if db == "" {
-		w.WriteHeader(400)
-		w.Write([]byte("database not found\n"))
+		backend.WriteError(w, req, 400, "database not found")
 		return
 	}
 	if hs.ic.DB != "" && db != hs.ic.DB {
-		w.WriteHeader(400)
-		w.Write([]byte("database forbidden\n"))
+		backend.WriteError(w, req, 400, "database forbidden")
 		return
 	}
 
@@ -118,8 +113,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	if req.Header.Get("Content-Encoding") == "gzip" {
 		b, err := gzip.NewReader(req.Body)
 		if err != nil {
-			w.WriteHeader(400)
-			w.Write([]byte("unable to decode gzip body\n"))
+			backend.WriteError(w, req, 400, "unable to decode gzip body")
 			return
 		}
 		defer b.Close()
@@ -128,8 +122,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 
 	p, err := ioutil.ReadAll(body)
 	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte(err.Error()))
+		backend.WriteError(w, req, 400, err.Error())
 		return
 	}
 

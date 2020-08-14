@@ -56,6 +56,8 @@ queries=(
     'q=show tag VALUES WITH key = "region"'
     'q=SHOW retention policies'
     # 'q=show stats'
+    'q=select * from'
+    'q=select * measurement'
 )
 
 len=${#queries[*]}
