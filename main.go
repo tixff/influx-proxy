@@ -84,20 +84,20 @@ func main() {
 		fmt.Printf("illegal config file: %s\n", err)
 		return
 	}
+	nodecfg := fcs.LoadNode()
+
+	initLog(nodecfg.LogPath)
+	createDataDir(nodecfg.DataDir)
 	if GitCommit == "" {
 		log.Printf("version: %s", backend.VERSION)
 	} else {
 		log.Printf("version: %s, commit: %s, build: %s", backend.VERSION, GitCommit, BuildTime)
 	}
-	nodecfg := fcs.LoadNode()
-
-	initLog(nodecfg.LogPath)
-	createDataDir(nodecfg.DataDir)
 
 	ic := backend.NewInfluxCluster(fcs, &nodecfg)
 	err = ic.LoadConfig()
 	if err != nil {
-		log.Printf("config file load failed: %s\n", err)
+		log.Printf("config file load failed: %s", err)
 		return
 	}
 

@@ -98,19 +98,19 @@ func (bs *Backends) WriteBuffer(p []byte) {
 
 	n, err := bs.buffer.Write(p)
 	if err != nil {
-		log.Printf("error: %s\n", err)
+		log.Printf("error: %s", err)
 		return
 	}
 	if n != len(p) {
 		err = io.ErrShortWrite
-		log.Printf("error: %s\n", err)
+		log.Printf("error: %s", err)
 		return
 	}
 
 	if p[len(p)-1] != '\n' {
 		_, err = bs.buffer.Write([]byte{'\n'})
 		if err != nil {
-			log.Printf("error: %s\n", err)
+			log.Printf("error: %s", err)
 			return
 		}
 	}
@@ -162,13 +162,13 @@ func (bs *Backends) Flush() {
 				log.Printf("bad backend, drop all data")
 				return
 			default:
-				log.Printf("write http error: %s, length: %d\n", bs.HttpBackend.URL, len(p))
+				log.Printf("write http error: %s, length: %d", bs.HttpBackend.URL, len(p))
 			}
 		}
 
 		err = bs.fb.Write(p)
 		if err != nil {
-			log.Printf("write file error: %s\n", err)
+			log.Printf("write file error: %s", err)
 		}
 		// don't try to run rewrite loop directly.
 		// that need a lock.
@@ -219,18 +219,18 @@ func (bs *Backends) Rewrite() (err error) {
 		log.Printf("bad backend, drop all data")
 		err = nil
 	default:
-		log.Printf("rewrite http error: %s, length: %d\n", bs.HttpBackend.URL, len(p))
+		log.Printf("rewrite http error: %s, length: %d", bs.HttpBackend.URL, len(p))
 
 		err = bs.fb.RollbackMeta()
 		if err != nil {
-			log.Printf("rollback meta error: %s\n", err)
+			log.Printf("rollback meta error: %s", err)
 		}
 		return
 	}
 
 	err = bs.fb.UpdateMeta()
 	if err != nil {
-		log.Printf("update meta error: %s\n", err)
+		log.Printf("update meta error: %s", err)
 		return
 	}
 	return

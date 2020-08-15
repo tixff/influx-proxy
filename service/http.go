@@ -82,11 +82,11 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 	q := req.FormValue("q")
 	err := hs.ic.Query(w, req)
 	if err != nil {
-		log.Printf("query error: %s, the query is %s, the client is %s\n", err, q, req.RemoteAddr)
+		log.Printf("query error: %s, the query is %s, the client is %s", err, q, req.RemoteAddr)
 		return
 	}
 	if hs.ic.QueryTracing {
-		log.Printf("the query is %s, the client is %s\n", q, req.RemoteAddr)
+		log.Printf("the query is %s, the client is %s", q, req.RemoteAddr)
 	}
 }
 
@@ -140,6 +140,6 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(204)
 	}
 	if hs.ic.WriteTracing {
-		log.Printf("write body received by handler: %s, the client is %s\n", p, req.RemoteAddr)
+		log.Printf("write body received by handler: %s, the client is %s", p, req.RemoteAddr)
 	}
 }

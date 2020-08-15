@@ -127,14 +127,14 @@ func (hb *HttpBackend) Ping() (version string, err error) {
 	if resp.StatusCode == 204 {
 		return
 	}
-	log.Printf("ping status code: %d, the backend is %s\n", resp.StatusCode, hb.URL)
+	log.Printf("ping status code: %d, the backend is %s", resp.StatusCode, hb.URL)
 
 	respbuf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Print("readall error: ", err)
 		return
 	}
-	log.Printf("error response: %s\n", respbuf)
+	log.Printf("error response: %s", respbuf)
 	return
 }
 
@@ -168,7 +168,7 @@ func (hb *HttpBackend) QuerySink(req *http.Request) (qr *QueryResult) {
 	var resp *http.Response
 	resp, qr.Err = hb.transport.RoundTrip(req)
 	if qr.Err != nil {
-		log.Printf("query error: %s, the query is %s\n", qr.Err, q)
+		log.Printf("query error: %s, the query is %s", qr.Err, q)
 		hb.active = false
 		return
 	}
@@ -178,7 +178,7 @@ func (hb *HttpBackend) QuerySink(req *http.Request) (qr *QueryResult) {
 	if resp.Header.Get("Content-Encoding") == "gzip" {
 		respBody, qr.Err = gzip.NewReader(resp.Body)
 		if qr.Err != nil {
-			log.Printf("unable to decode gzip body\n")
+			log.Printf("unable to decode gzip body")
 			return
 		}
 		defer respBody.Close()
@@ -186,7 +186,7 @@ func (hb *HttpBackend) QuerySink(req *http.Request) (qr *QueryResult) {
 
 	qr.Body, qr.Err = ioutil.ReadAll(respBody)
 	if qr.Err != nil {
-		log.Printf("read body error: %s, the query is %s\n", qr.Err, q)
+		log.Printf("read body error: %s, the query is %s", qr.Err, q)
 		return
 	}
 
@@ -217,7 +217,7 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
 	q := strings.TrimSpace(req.FormValue("q"))
 	resp, err := hb.transport.RoundTrip(req)
 	if err != nil {
-		log.Printf("query error: %s, the query is %s\n", err, q)
+		log.Printf("query error: %s, the query is %s", err, q)
 		hb.active = false
 		return
 	}
@@ -227,7 +227,7 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
 
 	p, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("read body error: %s, the query is %s\n", err, q)
+		log.Printf("read body error: %s, the query is %s", err, q)
 		return
 	}
 

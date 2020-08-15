@@ -357,7 +357,7 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
 
 	key, err := ScanKey(line)
 	if err != nil {
-		log.Printf("scan key error: %s\n", err)
+		log.Printf("scan key error: %s", err)
 		atomic.AddInt64(&ic.stats.PointsWrittenFail, 1)
 		return
 	}
@@ -370,7 +370,7 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
 
 	bs, ok := ic.GetBackends(key)
 	if !ok {
-		log.Printf("new measurement: %s\n", key)
+		log.Printf("new measurement: %s", key)
 		atomic.AddInt64(&ic.stats.PointsWrittenFail, 1)
 		return
 	}
@@ -379,7 +379,7 @@ func (ic *InfluxCluster) WriteRow(line []byte) {
 	for _, b := range bs {
 		err = b.Write(line)
 		if err != nil {
-			log.Printf("cluster write fail: %s\n", key)
+			log.Printf("cluster write fail: %s", key)
 			atomic.AddInt64(&ic.stats.PointsWrittenFail, 1)
 			return
 		}
@@ -399,7 +399,7 @@ func (ic *InfluxCluster) Write(p []byte, precision string) (err error) {
 		line, err = buf.ReadBytes('\n')
 		switch err {
 		default:
-			log.Printf("error: %s\n", err)
+			log.Printf("error: %s", err)
 			atomic.AddInt64(&ic.stats.WriteRequestsFail, 1)
 			return
 		case io.EOF, nil:
