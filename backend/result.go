@@ -46,8 +46,8 @@ func (rsp *Response) Marshal(indent bool) (b []byte) {
 
 // TODO: multi queries in q?
 func SeriesFromResponseBytes(b []byte) (series models.Rows, e error) {
-	var rsp Response
-	e = jsoniter.Unmarshal(b, &rsp)
+	rsp := &Response{}
+	e = jsoniter.Unmarshal(b, rsp)
 	if e == nil && len(rsp.Results) > 0 && len(rsp.Results[0].Series) > 0 {
 		series = rsp.Results[0].Series
 	}
@@ -55,11 +55,17 @@ func SeriesFromResponseBytes(b []byte) (series models.Rows, e error) {
 }
 
 func ResultsFromResponseBytes(b []byte) (results []*Result, e error) {
-	var rsp Response
-	e = jsoniter.Unmarshal(b, &rsp)
+	rsp := &Response{}
+	e = jsoniter.Unmarshal(b, rsp)
 	if e == nil && len(rsp.Results) > 0 {
 		results = rsp.Results
 	}
+	return
+}
+
+func ResponseFromResponseBytes(b []byte) (rsp *Response, e error) {
+	rsp = &Response{}
+	e = jsoniter.Unmarshal(b, rsp)
 	return
 }
 
@@ -76,6 +82,13 @@ func ResponseFromSeries(series models.Rows) (rsp *Response) {
 func ResponseFromResults(results []*Result) (rsp *Response) {
 	rsp = &Response{
 		Results: results,
+	}
+	return
+}
+
+func ResponseFromError(err string) (rsp *Response) {
+	rsp = &Response{
+		Err: err,
 	}
 	return
 }

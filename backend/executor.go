@@ -40,16 +40,14 @@ func GzipCompress(b []byte) (cb []byte, err error) {
 	return
 }
 
-func ReadBodyBytes(req *http.Request) (bodyBytes []byte) {
+func ReadBody(req *http.Request) (body []byte) {
 	if req.Body != nil {
-		bodyBytes, _ = ioutil.ReadAll(req.Body)
+		body, _ = ioutil.ReadAll(req.Body)
 	}
 	return
 }
 
-func Write(w http.ResponseWriter, req *http.Request, rsp *Response, gzip bool) {
-	pretty := req.FormValue("pretty") == "true"
-	body := rsp.Marshal(pretty)
+func Write(w http.ResponseWriter, body []byte, gzip bool) {
 	if gzip {
 		gzipBody, _ := GzipCompress(body)
 		w.Write(gzipBody)
@@ -58,25 +56,36 @@ func Write(w http.ResponseWriter, req *http.Request, rsp *Response, gzip bool) {
 	}
 }
 
+func WriteBody(w http.ResponseWriter, body []byte, header http.Header, status int) {
+	copyHeader(w.Header(), header)
+	w.Header().Del("Content-Length")
+	w.WriteHeader(status)
+	Write(w, body, header.Get("Content-Encoding") == "gzip")
+}
+
 func WriteResp(w http.ResponseWriter, req *http.Request, rsp *Response, header http.Header, status int) {
 	copyHeader(w.Header(), header)
+	w.Header().Del("Content-Length")
 	if status > 0 {
 		w.WriteHeader(status)
 	}
 	if rsp == nil {
 		rsp = ResponseFromSeries(nil)
 	}
-	Write(w, req, rsp, header.Get("Content-Encoding") == "gzip")
+	pretty := req.FormValue("pretty") == "true"
+	body := rsp.Marshal(pretty)
+	Write(w, body, header.Get("Content-Encoding") == "gzip")
 }
 
-func WriteError(w http.ResponseWriter, req *http.Request, status int, err string) {
-	w.Header().Set("X-Influxdb-Error", err)
-	if req.Header.Get("Accept-Encoding") == "gzip" {
-		w.Header().Set("Content-Encoding", "gzip")
-	}
+func WriteError(w http.ResponseWriter, req *http.Request, status int, err error) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Influxdb-Error", err.Error())
 	w.WriteHeader(status)
-	rsp := &Response{Err: err}
-	Write(w, req, rsp, req.Header.Get("Accept-Encoding") == "gzip")
+	rsp := ResponseFromError(err.Error())
+	pretty := req.FormValue("pretty") == "true"
+	body := rsp.Marshal(pretty)
+	// to keep with influxdb, error body is not compressed by gzip
+	Write(w, body, false)
 }
 
 func CloneForm(f url.Values) (cf url.Values) {
@@ -113,7 +122,7 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tok
 func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
 	// remove support of query parameter `chunked`
 	req.Form.Del("chunked")
-	bodyBytes := ReadBodyBytes(req)
+	bodyBytes := ReadBody(req)
 	var header http.Header
 	var status int
 	var bodies [][]byte
@@ -135,10 +144,12 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 	close(result)
 	for qr := range result {
 		if qr.Status >= http.StatusBadRequest {
-			copyHeader(w.Header(), qr.Header)
-			w.WriteHeader(qr.Status)
-			w.Write(qr.Body)
-			return nil
+			rsp, _ := ResponseFromResponseBytes(qr.Body)
+			if rsp.Err != "" {
+				return errors.New(rsp.Err)
+			}
+			WriteBody(w, qr.Body, qr.Header, qr.Status)
+			return
 		}
 		if qr.Err != nil {
 			return qr.Err
@@ -177,7 +188,7 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 }
 
 func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
-	bodyBytes := ReadBodyBytes(req)
+	bodyBytes := ReadBody(req)
 	rsp := ResponseFromSeries(nil)
 	var header http.Header
 	var inactive int
@@ -217,7 +228,7 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 }
 
 func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
-	bodyBytes := ReadBodyBytes(req)
+	bodyBytes := ReadBody(req)
 	rsp := ResponseFromSeries(nil)
 	var header http.Header
 	var inactive int

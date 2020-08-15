@@ -19,7 +19,18 @@ import (
 	"github.com/chengshiwen/influx-proxy/monitor"
 )
 
-var ErrBackendNotExist = errors.New("use a backend not exists")
+var (
+	ErrBackendNotExist    = errors.New("backend not exists")
+	ErrMethodNotAllowed   = errors.New("method not allowed")
+	ErrEmptyQuery         = errors.New("empty query")
+	ErrDatabaseNotFound   = errors.New("database not found")
+	ErrDatabaseForbidden  = errors.New("database forbidden")
+	ErrQueryExecutor      = errors.New("query executor error")
+	ErrQueryError         = errors.New("query error")
+	ErrEmptyMeasurement   = errors.New("can't get measurement")
+	ErrUnknownMeasurement = errors.New("unknown measurement")
+	ErrBackendsNotActive  = errors.New("backends not active")
+)
 
 var StatisticsMeasurementName = "influx.proxy.statistics"
 
@@ -233,24 +244,24 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	switch req.Method {
 	case "GET", "POST":
 	default:
-		WriteError(w, req, 400, "illegal method")
+		WriteError(w, req, 405, ErrMethodNotAllowed)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-		return
+		return ErrMethodNotAllowed
 	}
 
 	// TODO: multi queries in q?
 	q := strings.TrimSpace(req.FormValue("q"))
 	if q == "" {
-		WriteError(w, req, 400, "empty query")
+		WriteError(w, req, 400, ErrEmptyQuery)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-		return
+		return ErrEmptyQuery
 	}
 
 	tokens, check, from := CheckQuery(q)
 	if !check {
-		WriteError(w, req, 400, "query forbidden")
+		WriteError(w, req, 400, ErrIllegalQL)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-		return
+		return ErrIllegalQL
 	}
 
 	checkDb, showDb, db := CheckDatabaseFromTokens(tokens)
@@ -262,22 +273,21 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	}
 	if !showDb {
 		if db == "" {
-			WriteError(w, req, 400, "database not found")
+			WriteError(w, req, 400, ErrDatabaseNotFound)
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-			return
+			return ErrDatabaseNotFound
 		}
 		if ic.DB != "" && db != ic.DB {
-			WriteError(w, req, 400, "database forbidden")
+			WriteError(w, req, 400, ErrDatabaseForbidden)
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-			return
+			return ErrDatabaseForbidden
 		}
 	}
 
 	if !from || !CheckSelectOrShowFromTokens(tokens) {
 		err = ic.query_executor.Query(w, req, tokens)
 		if err != nil {
-			log.Print("query executor error: ", err)
-			WriteError(w, req, 400, "query executor error")
+			WriteError(w, req, 400, err)
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		}
 		return
@@ -285,18 +295,17 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 
 	key, err := GetMeasurementFromTokens(tokens)
 	if err != nil {
-		log.Printf("can't get measurement: %s\n", q)
-		WriteError(w, req, 400, "can't get measurement")
+		WriteError(w, req, 400, ErrEmptyMeasurement)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-		return
+		return ErrEmptyMeasurement
 	}
 
 	apis, ok := ic.GetBackends(key)
 	if !ok {
-		log.Printf("unknown measurement: %s, the query is %s\n", key, q)
-		WriteError(w, req, 400, "unknown measurement")
+		log.Printf("unknown measurement: %s", key)
+		WriteError(w, req, 400, ErrUnknownMeasurement)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-		return
+		return ErrUnknownMeasurement
 	}
 
 	// pass non-active and write-only.
@@ -326,12 +335,13 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 			hb := api.(*Backends)
 			backends[i] = hb.URL
 		}
-		log.Printf("backends not active: %+v, query: %s, measurement: %s", backends, q, key)
-		WriteError(w, req, 400, "backends not active")
-	} else {
-		WriteError(w, req, 400, "query error")
+		log.Printf("backends not active: %+v", backends)
+		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
+		WriteError(w, req, 400, ErrBackendsNotActive)
+		return ErrBackendsNotActive
 	}
 	atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
+	WriteError(w, req, 400, ErrQueryError)
 	return
 }
 

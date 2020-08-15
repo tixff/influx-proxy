@@ -229,11 +229,15 @@ func getMeasurement(tokens []string) (m string) {
 	return
 }
 
+func HeadStmtInSupportCmds(tokens []string, n int) (in bool) {
+	return SupportCmds.Contains(GetHeadStmtFromTokens(tokens, n))
+}
+
 func CheckQuery(q string) (tokens []string, check bool, from bool) {
 	tokens = ScanTokens(q, 0)
 	stmt := strings.ToLower(tokens[0])
 	if stmt == "select" {
-		for i := 1; i < len(tokens); i++ {
+		for i := 2; i < len(tokens); i++ {
 			stmt := strings.ToLower(tokens[i])
 			if stmt == "into" {
 				return tokens, false, false
@@ -245,10 +249,11 @@ func CheckQuery(q string) (tokens []string, check bool, from bool) {
 		return tokens, false, false
 	}
 	if stmt == "show" {
-		for i := 1; i < len(tokens); i++ {
+		for i := 2; i < len(tokens); i++ {
 			stmt := strings.ToLower(tokens[i])
 			if stmt == "from" {
-				return tokens, true, true
+				check = HeadStmtInSupportCmds(tokens, i) || HeadStmtInSupportCmds(tokens, i-2)
+				return tokens, check, true
 			}
 		}
 	}

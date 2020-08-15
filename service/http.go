@@ -5,6 +5,7 @@
 package service
 
 import (
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,6 +13,14 @@ import (
 
 	"github.com/chengshiwen/influx-proxy/backend"
 	gzip "github.com/klauspost/pgzip"
+)
+
+var (
+	ErrAuthentication    = errors.New("authentication failed")
+	ErrMethodNotAllowed  = errors.New("method not allowed")
+	ErrDatabaseNotFound  = errors.New("database not found")
+	ErrDatabaseForbidden = errors.New("database forbidden")
+	ErrGzipUnableDecode  = errors.New("unable to decode gzip body")
 )
 
 type HttpService struct { // nolint:golint
@@ -66,7 +75,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
 	if !hs.checkAuth(req) {
-		backend.WriteError(w, req, 401, "authentication failed")
+		backend.WriteError(w, req, 401, ErrAuthentication)
 		return
 	}
 
@@ -86,12 +95,12 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("X-Influxdb-Version", backend.VERSION)
 
 	if !hs.checkAuth(req) {
-		backend.WriteError(w, req, 401, "authentication failed")
+		backend.WriteError(w, req, 401, ErrAuthentication)
 		return
 	}
 
 	if req.Method != "POST" {
-		backend.WriteError(w, req, 405, "method not allow")
+		backend.WriteError(w, req, 405, ErrMethodNotAllowed)
 		return
 	}
 
@@ -101,11 +110,11 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	}
 	db := req.URL.Query().Get("db")
 	if db == "" {
-		backend.WriteError(w, req, 400, "database not found")
+		backend.WriteError(w, req, 400, ErrDatabaseNotFound)
 		return
 	}
 	if hs.ic.DB != "" && db != hs.ic.DB {
-		backend.WriteError(w, req, 400, "database forbidden")
+		backend.WriteError(w, req, 400, ErrDatabaseForbidden)
 		return
 	}
 
@@ -113,7 +122,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	if req.Header.Get("Content-Encoding") == "gzip" {
 		b, err := gzip.NewReader(req.Body)
 		if err != nil {
-			backend.WriteError(w, req, 400, "unable to decode gzip body")
+			backend.WriteError(w, req, 400, ErrGzipUnableDecode)
 			return
 		}
 		defer b.Close()
@@ -122,7 +131,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 
 	p, err := ioutil.ReadAll(body)
 	if err != nil {
-		backend.WriteError(w, req, 400, err.Error())
+		backend.WriteError(w, req, 400, err)
 		return
 	}
 

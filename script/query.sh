@@ -43,7 +43,22 @@ curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=SHOW retention policie
 
 
 echo ""
-echo "query test:"
+echo "error test:"
+
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q='
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * from'
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * measurement'
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show TAG from mem'
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show TAG keys from '
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show field KEYS fr'
+curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show measurement'
+curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=SHOW retention policies on newdb'
+curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show TAG keys test from mem'
+curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show series from cpu1'
+
+
+echo ""
+echo "gzip test:"
 
 queries=(
     'q=select * from "cpu1"'
@@ -56,8 +71,6 @@ queries=(
     'q=show tag VALUES WITH key = "region"'
     'q=SHOW retention policies'
     # 'q=show stats'
-    'q=select * from'
-    'q=select * measurement'
 )
 
 len=${#queries[*]}
