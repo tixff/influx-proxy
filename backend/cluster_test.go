@@ -121,102 +121,182 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
-		want  int
+		want  error
 	}{
 		{
 			name:  "cpu",
 			query: "SELECT * from cpu where time < now() - 1m",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "test",
 			query: "SELECT cpu_load from test",
-			want:  400,
+			want:  ErrUnknownMeasurement,
 		},
 		{
 			name:  "cpu_load",
 			query: " select cpu_load from cpu",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "cpu.load",
 			query: " select cpu_load from \"cpu.load\" WHERE time > now() - 1m",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "load.cpu",
 			query: " select cpu_load from \"load.cpu\" WHERE time > now() - 1m",
-			want:  400,
+			want:  ErrUnknownMeasurement,
 		},
 		{
 			name:  "show_tag_keys",
 			query: "SHOW tag keys from \"cpu\" ",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "show_tag_values",
 			query: "SHOW tag values WITH key = \"host\"",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "show_field_keys",
 			query: "SHOW field KEYS from \"cpu\" ",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "delete_cpu",
 			query: " DELETE FROM \"cpu\" WHERE time < '2000-01-01T00:00:00Z'",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "show_series",
 			query: "show series",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "show_measurements",
 			query: "SHOW measurements ",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "show_retention_policies",
 			query: " SHOW retention policies limit 10",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "cpu.load_with_host1",
 			query: " select cpu_load from \"cpu.load\" WHERE host =~ /^$/",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "cpu.load_with_host2",
 			query: " select cpu_load from \"cpu.load\" WHERE host =~ /^()$/",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "cpu.load_into_from",
 			query: "select * into \"cpu.load_new\" from \"cpu.load\"",
-			want:  400,
+			want:  ErrIllegalQL,
 		},
 		{
 			name:  "cpu.load_into_from_group_by",
 			query: "select * into \"cpu.load_new\" from \"cpu.load\" GROUP BY *",
-			want:  400,
+			want:  ErrIllegalQL,
 		},
 		{
 			name:  "write.only",
 			query: " select cpu_load from write_only",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "drop_series",
 			query: "DROP series from \"cpu.load\"",
-			want:  200,
+			want:  nil,
 		},
 		{
 			name:  "drop_measurement",
 			query: "DROP measurement \"cpu.load\"",
-			want:  200,
+			want:  nil,
+		},
+		{
+			name:  "empty",
+			query: "",
+			want:  ErrEmptyQuery,
+		},
+		{
+			name:  "select.empty.measurement",
+			query: "select * from",
+			want:  ErrEmptyMeasurement,
+		},
+		{
+			name:  "select.illegal",
+			query: "select * measurement",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "show.tag.illegal",
+			query: "show TAG from cpu",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "show.tag.empty.measurement",
+			query: "show TAG values from ",
+			want:  ErrEmptyMeasurement,
+		},
+		{
+			name:  "show.series.empty.measurement",
+			query: "show series from",
+			want:  ErrEmptyMeasurement,
+		},
+		{
+			name:  "show.measurement.illegal",
+			query: "show measurement",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "show.stat.illegal",
+			query: "show stat",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "drop.illegal",
+			query: "drop",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "delete.empty.measurement",
+			query: "delete from ",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "drop.series.illegal",
+			query: "drop series",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "drop.series.empty.measurement",
+			query: "drop series from",
+			want:  ErrEmptyMeasurement,
+		},
+		{
+			name:  "drop.empty.measurement",
+			query: "drop measurement",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "create.database.illegal",
+			query: "CREATE DATABASE",
+			want:  ErrDatabaseNotFound,
+		},
+		{
+			name:  "drop.database.illegal",
+			query: "drop database ",
+			want:  ErrIllegalQL,
+		},
+		{
+			name:  "show.tag.db.illegal",
+			query: "show TAG keys test from mem",
+			want:  ErrIllegalQL,
 		},
 	}
 
@@ -225,8 +305,8 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 		req, _ := http.NewRequest("GET", "http://localhost:7076/query?"+q.Encode(), nil)
 		req.URL.Query()
 		err = ic.Query(w, req)
-		if w.status != tt.want {
-			t.Error(tt.name, err, w.status)
+		if err != tt.want {
+			t.Error(tt.name, tt.want, err)
 		}
 		w.buffer.Reset()
 	}
