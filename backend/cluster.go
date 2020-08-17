@@ -245,7 +245,6 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	switch req.Method {
 	case "GET", "POST":
 	default:
-		WriteError(w, req, 405, ErrMethodNotAllowed)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return ErrMethodNotAllowed
 	}
@@ -253,14 +252,12 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	// TODO: multi queries in q?
 	q := strings.TrimSpace(req.FormValue("q"))
 	if q == "" {
-		WriteError(w, req, 400, ErrEmptyQuery)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return ErrEmptyQuery
 	}
 
 	tokens, check, from := CheckQuery(q)
 	if !check {
-		WriteError(w, req, 400, ErrIllegalQL)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return ErrIllegalQL
 	}
@@ -274,12 +271,10 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	}
 	if !showDb {
 		if db == "" {
-			WriteError(w, req, 400, ErrDatabaseNotFound)
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 			return ErrDatabaseNotFound
 		}
 		if ic.DB != "" && db != ic.DB {
-			WriteError(w, req, 400, ErrDatabaseForbidden)
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 			return ErrDatabaseForbidden
 		}
@@ -288,7 +283,6 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	if !from || !CheckSelectOrShowFromTokens(tokens) {
 		err = ic.query_executor.Query(w, req, tokens)
 		if err != nil {
-			WriteError(w, req, 400, err)
 			atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		}
 		return
@@ -296,7 +290,6 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 
 	key, err := GetMeasurementFromTokens(tokens)
 	if err != nil {
-		WriteError(w, req, 400, ErrEmptyMeasurement)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return ErrEmptyMeasurement
 	}
@@ -304,7 +297,6 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	apis, ok := ic.GetBackends(key)
 	if !ok {
 		log.Printf("unknown measurement: %s", key)
-		WriteError(w, req, 400, ErrUnknownMeasurement)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 		return ErrUnknownMeasurement
 	}
@@ -338,12 +330,10 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 		}
 		log.Printf("backends not active: %+v", backends)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-		WriteError(w, req, 400, ErrBackendsNotActive)
 		return ErrBackendsNotActive
 	}
 	atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-	WriteError(w, req, 400, ErrQueryError)
-	return
+	return ErrQueryError
 }
 
 // Wrong in one row will not stop others.

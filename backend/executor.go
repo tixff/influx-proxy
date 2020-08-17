@@ -77,17 +77,6 @@ func WriteResp(w http.ResponseWriter, req *http.Request, rsp *Response, header h
 	Write(w, body, header.Get("Content-Encoding") == "gzip")
 }
 
-func WriteError(w http.ResponseWriter, req *http.Request, status int, err error) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-Influxdb-Error", err.Error())
-	w.WriteHeader(status)
-	rsp := ResponseFromError(err.Error())
-	pretty := req.FormValue("pretty") == "true"
-	body := rsp.Marshal(pretty)
-	// to keep with influxdb, error body is not compressed by gzip
-	Write(w, body, false)
-}
-
 func CloneForm(f url.Values) (cf url.Values) {
 	cf = make(url.Values, len(f))
 	for k, v := range f {
@@ -263,8 +252,7 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 			rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(apis))
 		}
 	} else {
-		WriteError(w, req, 400, ErrIllegalQL)
-		return
+		return ErrIllegalQL
 	}
 	WriteResp(w, req, rsp, header, http.StatusOK)
 	return

@@ -66,16 +66,16 @@ func (hs *HttpService) Register(mux *http.ServeMux) {
 func (hs *HttpService) HandlerPing(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	version, _ := hs.ic.Ping()
-	w.Header().Add("X-Influxdb-Version", version)
+	w.Header().Set("X-Influxdb-Version", version)
 	w.WriteHeader(204)
 }
 
 func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	w.Header().Add("X-Influxdb-Version", backend.Version)
+	w.Header().Set("X-Influxdb-Version", backend.Version)
 
 	if !hs.checkAuth(req) {
-		backend.WriteError(w, req, 401, ErrAuthentication)
+		WriteError(w, req, 401, ErrAuthentication)
 		return
 	}
 
@@ -83,6 +83,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 	err := hs.ic.Query(w, req)
 	if err != nil {
 		log.Printf("query error: %s, the query is %s, the client is %s", err, q, req.RemoteAddr)
+		WriteError(w, req, 400, err)
 		return
 	}
 	if hs.ic.QueryTracing {
@@ -92,15 +93,15 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 
 func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	w.Header().Add("X-Influxdb-Version", backend.Version)
+	w.Header().Set("X-Influxdb-Version", backend.Version)
 
 	if !hs.checkAuth(req) {
-		backend.WriteError(w, req, 401, ErrAuthentication)
+		WriteError(w, req, 401, ErrAuthentication)
 		return
 	}
 
 	if req.Method != "POST" {
-		backend.WriteError(w, req, 405, ErrMethodNotAllowed)
+		WriteError(w, req, 405, ErrMethodNotAllowed)
 		return
 	}
 
@@ -110,11 +111,11 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	}
 	db := req.URL.Query().Get("db")
 	if db == "" {
-		backend.WriteError(w, req, 400, ErrDatabaseNotFound)
+		WriteError(w, req, 400, ErrDatabaseNotFound)
 		return
 	}
 	if hs.ic.DB != "" && db != hs.ic.DB {
-		backend.WriteError(w, req, 400, ErrDatabaseForbidden)
+		WriteError(w, req, 400, ErrDatabaseForbidden)
 		return
 	}
 
@@ -122,7 +123,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	if req.Header.Get("Content-Encoding") == "gzip" {
 		b, err := gzip.NewReader(req.Body)
 		if err != nil {
-			backend.WriteError(w, req, 400, ErrGzipUnableDecode)
+			WriteError(w, req, 400, ErrGzipUnableDecode)
 			return
 		}
 		defer b.Close()
@@ -131,7 +132,7 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 
 	p, err := ioutil.ReadAll(body)
 	if err != nil {
-		backend.WriteError(w, req, 400, err)
+		WriteError(w, req, 400, err)
 		return
 	}
 
@@ -142,4 +143,15 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	if hs.ic.WriteTracing {
 		log.Printf("write body received by handler: %s, the client is %s", p, req.RemoteAddr)
 	}
+}
+
+func WriteError(w http.ResponseWriter, req *http.Request, status int, err error) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Influxdb-Error", err.Error())
+	w.WriteHeader(status)
+	rsp := backend.ResponseFromError(err.Error())
+	pretty := req.FormValue("pretty") == "true"
+	body := rsp.Marshal(pretty)
+	// to keep with influxdb, error body is not compressed by gzip
+	backend.Write(w, body, false)
 }
