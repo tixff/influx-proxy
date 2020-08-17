@@ -143,7 +143,7 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 	wg.Wait()
 	close(result)
 	for qr := range result {
-		if qr.Status >= http.StatusBadRequest {
+		if qr.Status >= 400 {
 			rsp, _ := ResponseFromResponseBytes(qr.Body)
 			if rsp.Err != "" {
 				return errors.New(rsp.Err)
@@ -262,6 +262,9 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 		if inactive > 0 {
 			rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(apis))
 		}
+	} else {
+		WriteError(w, req, 400, ErrIllegalQL)
+		return
 	}
 	WriteResp(w, req, rsp, header, http.StatusOK)
 	return
