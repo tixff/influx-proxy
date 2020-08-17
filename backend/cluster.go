@@ -20,12 +20,13 @@ import (
 )
 
 var (
+	ErrEmptyBackends      = errors.New("backends cannot be empty")
+	ErrEmptyKeyMaps       = errors.New("keymaps cannot be empty")
 	ErrBackendNotExist    = errors.New("backend not exists")
 	ErrMethodNotAllowed   = errors.New("method not allowed")
 	ErrEmptyQuery         = errors.New("empty query")
 	ErrDatabaseNotFound   = errors.New("database not found")
 	ErrDatabaseForbidden  = errors.New("database forbidden")
-	ErrQueryExecutor      = errors.New("query executor error")
 	ErrQueryError         = errors.New("query error")
 	ErrEmptyMeasurement   = errors.New("can't get measurement")
 	ErrUnknownMeasurement = errors.New("unknown measurement")
@@ -148,7 +149,7 @@ func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, err err
 	}
 
 	if len(bkcfgs) == 0 {
-		err = errors.New("backends cannot be empty")
+		err = ErrEmptyBackends
 		return
 	}
 
@@ -172,7 +173,7 @@ func (ic *InfluxCluster) loadMeasurements(backends map[string]BackendAPI) (m2bs 
 	}
 
 	if len(m_map) == 0 {
-		err = errors.New("keymaps cannot be empty")
+		err = ErrEmptyKeyMaps
 		return
 	}
 
@@ -211,7 +212,7 @@ func (ic *InfluxCluster) LoadConfig() (err error) {
 
 func (ic *InfluxCluster) Ping() (version string, err error) {
 	atomic.AddInt64(&ic.stats.PingRequests, 1)
-	version = VERSION
+	version = Version
 	return
 }
 

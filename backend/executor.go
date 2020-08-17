@@ -235,11 +235,11 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 	if CheckDeleteOrDropMeasurementFromTokens(tokens) {
 		key, err := GetMeasurementFromTokens(tokens)
 		if err != nil {
-			return errors.New("can't get measurement: " + req.FormValue("q"))
+			return ErrEmptyMeasurement
 		}
 		apis, ok := iqe.ic.GetBackends(key)
 		if !ok {
-			return fmt.Errorf("unknown measurement: %s, query: %s", key, req.FormValue("q"))
+			return ErrUnknownMeasurement
 		}
 		result := make(chan *QueryResult, len(iqe.ic.backends))
 		wg := &sync.WaitGroup{}

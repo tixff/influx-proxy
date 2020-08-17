@@ -72,7 +72,7 @@ func (hs *HttpService) HandlerPing(w http.ResponseWriter, req *http.Request) {
 
 func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	w.Header().Add("X-Influxdb-Version", backend.VERSION)
+	w.Header().Add("X-Influxdb-Version", backend.Version)
 
 	if !hs.checkAuth(req) {
 		backend.WriteError(w, req, 401, ErrAuthentication)
@@ -92,7 +92,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 
 func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	w.Header().Add("X-Influxdb-Version", backend.VERSION)
+	w.Header().Add("X-Influxdb-Version", backend.Version)
 
 	if !hs.checkAuth(req) {
 		backend.WriteError(w, req, 401, ErrAuthentication)

@@ -18,7 +18,7 @@ import (
 func HandlerAny(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	log.Printf("handler any get url: %s", req.URL)
-	w.Header().Add("X-Influxdb-Version", VERSION)
+	w.Header().Add("X-Influxdb-Version", Version)
 	if req.URL.Path == "/write" || req.URL.Path == "/ping" {
 		w.WriteHeader(http.StatusNoContent)
 	} else {

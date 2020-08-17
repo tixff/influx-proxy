@@ -71,7 +71,7 @@ func pathExist(path string) (bool, error) {
 
 func main() {
 	if Version {
-		fmt.Printf("Version:    %s\n", backend.VERSION)
+		fmt.Printf("Version:    %s\n", backend.Version)
 		fmt.Printf("Git commit: %s\n", GitCommit)
 		fmt.Printf("Go version: %s\n", runtime.Version())
 		fmt.Printf("Build time: %s\n", BuildTime)
@@ -89,9 +89,9 @@ func main() {
 	initLog(nodecfg.LogPath)
 	createDataDir(nodecfg.DataDir)
 	if GitCommit == "" {
-		log.Printf("version: %s", backend.VERSION)
+		log.Printf("version: %s", backend.Version)
 	} else {
-		log.Printf("version: %s, commit: %s, build: %s", backend.VERSION, GitCommit, BuildTime)
+		log.Printf("version: %s, commit: %s, build: %s", backend.Version, GitCommit, BuildTime)
 	}
 
 	ic := backend.NewInfluxCluster(fcs, &nodecfg)

@@ -114,7 +114,7 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 		return
 	}
 	w := NewDummyResponseWriter()
-	w.Header().Add("X-Influxdb-Version", VERSION)
+	w.Header().Add("X-Influxdb-Version", Version)
 	q := url.Values{}
 	q.Set("db", "test")
 
