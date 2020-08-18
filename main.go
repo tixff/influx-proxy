@@ -45,7 +45,7 @@ func initLog(logPath string) {
 	}
 }
 
-func createDataDir(dataDir string) {
+func makeDir(dataDir string) {
 	exist, err := pathExist(dataDir)
 	if err != nil {
 		log.Fatalln("check data dir error")
@@ -53,7 +53,7 @@ func createDataDir(dataDir string) {
 	if !exist {
 		err = os.MkdirAll(dataDir, os.ModePerm)
 		if err != nil {
-			log.Fatalln("create data dir error")
+			log.Fatalln("make data dir error")
 		}
 	}
 }
@@ -87,7 +87,7 @@ func main() {
 	nodecfg := fcs.LoadNode()
 
 	initLog(nodecfg.LogPath)
-	createDataDir(nodecfg.DataDir)
+	makeDir(nodecfg.DataDir)
 	if GitCommit == "" {
 		log.Printf("version: %s", backend.Version)
 	} else {
