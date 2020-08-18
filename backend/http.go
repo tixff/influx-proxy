@@ -28,20 +28,6 @@ var (
 	ErrUnknown      = errors.New("unknown error")
 )
 
-func Compress(buf *bytes.Buffer, p []byte) (err error) {
-	zip := gzip.NewWriter(buf)
-	n, err := zip.Write(p)
-	if err != nil {
-		return
-	}
-	if n != len(p) {
-		err = io.ErrShortWrite
-		return
-	}
-	err = zip.Close()
-	return
-}
-
 type QueryResult struct {
 	Header http.Header
 	Status int
@@ -96,6 +82,38 @@ func NewTransport(tlsSkip bool) (transport *http.Transport) {
 	}
 }
 
+func Compress(buf *bytes.Buffer, p []byte) (err error) {
+	zip := gzip.NewWriter(buf)
+	n, err := zip.Write(p)
+	if err != nil {
+		return
+	}
+	if n != len(p) {
+		err = io.ErrShortWrite
+		return
+	}
+	err = zip.Close()
+	return
+}
+
+func CloneForm(f url.Values) (cf url.Values) {
+	cf = make(url.Values, len(f))
+	for k, v := range f {
+		nv := make([]string, len(v))
+		copy(nv, v)
+		cf[k] = nv
+	}
+	return
+}
+
+func CopyHeader(dst, src http.Header) {
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Set(k, v)
+		}
+	}
+}
+
 // TODO: update active when calling successed or failed.
 func (hb *HttpBackend) CheckActive() {
 	var err error
@@ -136,14 +154,6 @@ func (hb *HttpBackend) Ping() (version string, err error) {
 	}
 	log.Printf("error response: %s", respbuf)
 	return
-}
-
-func copyHeader(dst, src http.Header) {
-	for k, vv := range src {
-		for _, v := range vv {
-			dst.Set(k, v)
-		}
-	}
 }
 
 func (hb *HttpBackend) QuerySink(req *http.Request) (qr *QueryResult) {
@@ -223,7 +233,7 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
 	}
 	defer resp.Body.Close()
 
-	copyHeader(w.Header(), resp.Header)
+	CopyHeader(w.Header(), resp.Header)
 
 	p, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

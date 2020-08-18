@@ -28,7 +28,7 @@ var (
 	ErrDatabaseNotFound   = errors.New("database not found")
 	ErrDatabaseForbidden  = errors.New("database forbidden")
 	ErrQueryError         = errors.New("query error")
-	ErrEmptyMeasurement   = errors.New("can't get measurement")
+	ErrGetMeasurement     = errors.New("can't get measurement")
 	ErrUnknownMeasurement = errors.New("unknown measurement")
 	ErrBackendsNotActive  = errors.New("backends not active")
 )
@@ -291,7 +291,7 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 	key, err := GetMeasurementFromTokens(tokens)
 	if err != nil {
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-		return ErrEmptyMeasurement
+		return ErrGetMeasurement
 	}
 
 	apis, ok := ic.GetBackends(key)

@@ -226,7 +226,7 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 		{
 			name:  "select.empty.measurement",
 			query: "select * from",
-			want:  ErrEmptyMeasurement,
+			want:  ErrGetMeasurement,
 		},
 		{
 			name:  "select.illegal",
@@ -241,12 +241,12 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 		{
 			name:  "show.tag.empty.measurement",
 			query: "show TAG values from ",
-			want:  ErrEmptyMeasurement,
+			want:  ErrGetMeasurement,
 		},
 		{
 			name:  "show.series.empty.measurement",
 			query: "show series from",
-			want:  ErrEmptyMeasurement,
+			want:  ErrGetMeasurement,
 		},
 		{
 			name:  "show.measurement.illegal",
@@ -276,7 +276,7 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 		{
 			name:  "drop.series.empty.measurement",
 			query: "drop series from",
-			want:  ErrEmptyMeasurement,
+			want:  ErrGetMeasurement,
 		},
 		{
 			name:  "drop.empty.measurement",

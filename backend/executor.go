@@ -12,7 +12,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 
@@ -57,14 +56,14 @@ func Write(w http.ResponseWriter, body []byte, gzip bool) {
 }
 
 func WriteBody(w http.ResponseWriter, body []byte, header http.Header, status int) {
-	copyHeader(w.Header(), header)
+	CopyHeader(w.Header(), header)
 	w.Header().Del("Content-Length")
 	w.WriteHeader(status)
 	Write(w, body, header.Get("Content-Encoding") == "gzip")
 }
 
 func WriteResp(w http.ResponseWriter, req *http.Request, rsp *Response, header http.Header, status int) {
-	copyHeader(w.Header(), header)
+	CopyHeader(w.Header(), header)
 	w.Header().Del("Content-Length")
 	if status > 0 {
 		w.WriteHeader(status)
@@ -75,16 +74,6 @@ func WriteResp(w http.ResponseWriter, req *http.Request, rsp *Response, header h
 	pretty := req.FormValue("pretty") == "true"
 	body := rsp.Marshal(pretty)
 	Write(w, body, header.Get("Content-Encoding") == "gzip")
-}
-
-func CloneForm(f url.Values) (cf url.Values) {
-	cf = make(url.Values, len(f))
-	for k, v := range f {
-		nv := make([]string, len(v))
-		copy(nv, v)
-		cf[k] = nv
-	}
-	return
 }
 
 func querySink(api BackendAPI, req http.Request, bodyBytes []byte, result chan *QueryResult, wg *sync.WaitGroup) {
@@ -224,7 +213,7 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 	if CheckDeleteOrDropMeasurementFromTokens(tokens) {
 		key, err := GetMeasurementFromTokens(tokens)
 		if err != nil {
-			return ErrEmptyMeasurement
+			return ErrGetMeasurement
 		}
 		apis, ok := iqe.ic.GetBackends(key)
 		if !ok {
