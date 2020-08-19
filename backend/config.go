@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	Version = "1.4.5"
+	Version = "1.4.6"
 )
 
 type NodeConfig struct {
