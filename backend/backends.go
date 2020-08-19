@@ -108,7 +108,7 @@ func (bs *Backends) WriteBuffer(p []byte) {
 	}
 
 	if p[len(p)-1] != '\n' {
-		_, err = bs.buffer.Write([]byte{'\n'})
+		err = bs.buffer.WriteByte('\n')
 		if err != nil {
 			log.Printf("error: %s", err)
 			return

@@ -39,13 +39,6 @@ func GzipCompress(b []byte) (cb []byte, err error) {
 	return
 }
 
-func ReadBody(req *http.Request) (body []byte) {
-	if req.Body != nil {
-		body, _ = ioutil.ReadAll(req.Body)
-	}
-	return
-}
-
 func Write(w http.ResponseWriter, body []byte, gzip bool) {
 	if gzip {
 		gzipBody, _ := GzipCompress(body)
@@ -76,12 +69,12 @@ func WriteResp(w http.ResponseWriter, req *http.Request, rsp *Response, header h
 	Write(w, body, header.Get("Content-Encoding") == "gzip")
 }
 
-func querySink(api BackendAPI, req http.Request, bodyBytes []byte, result chan *QueryResult, wg *sync.WaitGroup) {
+func querySink(api BackendAPI, req http.Request, ch chan *QueryResult, wg *sync.WaitGroup) {
 	defer wg.Done()
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	req.Body = ioutil.NopCloser(&bytes.Buffer{})
 	req.Form = CloneForm(req.Form)
 	qr := api.QuerySink(&req)
-	result <- qr
+	ch <- qr
 }
 
 func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
@@ -100,12 +93,11 @@ func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tok
 func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
 	// remove support of query parameter `chunked`
 	req.Form.Del("chunked")
-	bodyBytes := ReadBody(req)
 	var header http.Header
 	var status int
 	var bodies [][]byte
 	var inactive int
-	result := make(chan *QueryResult, len(iqe.ic.backends))
+	ch := make(chan *QueryResult, len(iqe.ic.backends))
 	wg := &sync.WaitGroup{}
 	for _, api := range iqe.ic.backends {
 		if api.IsWriteOnly() {
@@ -116,11 +108,11 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 			continue
 		}
 		wg.Add(1)
-		go querySink(api, *req, bodyBytes, result, wg)
+		go querySink(api, *req, ch, wg)
 	}
 	wg.Wait()
-	close(result)
-	for qr := range result {
+	close(ch)
+	for qr := range ch {
 		if qr.Status >= 400 {
 			rsp, _ := ResponseFromResponseBytes(qr.Body)
 			if rsp.Err != "" {
@@ -166,12 +158,11 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 }
 
 func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
-	bodyBytes := ReadBody(req)
 	rsp := ResponseFromSeries(nil)
 	var header http.Header
 	var inactive int
 	if GetHeadStmtFromTokens(tokens, 2) == "create database" {
-		result := make(chan *QueryResult, len(iqe.ic.backends))
+		ch := make(chan *QueryResult, len(iqe.ic.backends))
 		wg := &sync.WaitGroup{}
 		for _, api := range iqe.ic.backends {
 			if !api.IsActive() {
@@ -187,11 +178,11 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 				req.Form.Set("q", "create database "+hb.DB)
 			}
 			wg.Add(1)
-			go querySink(api, *req, bodyBytes, result, wg)
+			go querySink(api, *req, ch, wg)
 		}
 		wg.Wait()
-		close(result)
-		for qr := range result {
+		close(ch)
+		for qr := range ch {
 			if qr.Err != nil {
 				return qr.Err
 			}
@@ -206,7 +197,6 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 }
 
 func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
-	bodyBytes := ReadBody(req)
 	rsp := ResponseFromSeries(nil)
 	var header http.Header
 	var inactive int
@@ -219,7 +209,7 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 		if !ok {
 			return ErrUnknownMeasurement
 		}
-		result := make(chan *QueryResult, len(iqe.ic.backends))
+		ch := make(chan *QueryResult, len(iqe.ic.backends))
 		wg := &sync.WaitGroup{}
 		for _, api := range apis {
 			if !api.IsActive() {
@@ -227,11 +217,11 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 				continue
 			}
 			wg.Add(1)
-			go querySink(api, *req, bodyBytes, result, wg)
+			go querySink(api, *req, ch, wg)
 		}
 		wg.Wait()
-		close(result)
-		for qr := range result {
+		close(ch)
+		for qr := range ch {
 			if qr.Err != nil {
 				return qr.Err
 			}
