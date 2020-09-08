@@ -209,6 +209,10 @@ func (hb *HttpBackend) QuerySink(req *http.Request) (qr *QueryResult) {
 		return
 	}
 
+	if resp.StatusCode >= 400 {
+		rsp, _ := ResponseFromResponseBytes(qr.Body)
+		qr.Err = errors.New(rsp.Err)
+	}
 	qr.Header = resp.Header
 	qr.Status = resp.StatusCode
 	return
