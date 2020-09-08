@@ -156,6 +156,7 @@ The following commands are forbid.
 * `REVOKE`
 * `KILL`
 * `SELECT INTO`
+* `ON clause`
 * `Multiple queries` delimited by semicolon `;`
 
 #### Supported commands

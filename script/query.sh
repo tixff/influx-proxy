@@ -14,8 +14,6 @@ curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=select * from 
 
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show tag keys from cpu1'
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show FIELD keys from cpu2'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show TAG keys on test from mem'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show field KEYS on test from svr'
 
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show MEASUREMENTS'
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show series'
@@ -28,18 +26,6 @@ curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show tag VALUE
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show tag VALUES from cpu2 WITH key = "region"'
 curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=SHOW retention policies'
 # curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show stats;'
-
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show MEASUREMENTS on test'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show series on test'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show series on test from svr'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show field KEYS on test'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show field KEYS on test from svr'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show TAG keys on test'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show TAG keys on test from mem'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show tag VALUES on test WITH key = "region"'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=show tag VALUES on test from mem WITH key = "region"'
-curl -G 'http://127.0.0.1:7076/query' --data-urlencode 'q=SHOW retention policies on test'
-# curl -G 'http://127.0.0.1:7076/query?db=test' --data-urlencode 'q=show stats'
 
 
 echo ""

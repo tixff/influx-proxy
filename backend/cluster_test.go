@@ -239,6 +239,11 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 			want:  ErrIllegalQL,
 		},
 		{
+			name:  "show.tag.on.illegal",
+			query: "show TAG keys on test from cpu",
+			want:  ErrOnClauseForbidden,
+		},
+		{
 			name:  "show.tag.empty.measurement",
 			query: "show TAG values from ",
 			want:  ErrGetMeasurement,

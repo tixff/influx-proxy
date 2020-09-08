@@ -25,6 +25,7 @@ var (
 	ErrBackendNotExist     = errors.New("backend not exists")
 	ErrMethodNotAllowed    = errors.New("method not allowed")
 	ErrEmptyQuery          = errors.New("empty query")
+	ErrOnClauseForbidden   = errors.New("on clause forbidden")
 	ErrDatabaseNotFound    = errors.New("database not found")
 	ErrDatabaseForbidden   = errors.New("database forbidden")
 	ErrQueryError          = errors.New("query error")
@@ -264,10 +265,11 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 
 	checkDb, showDb, db := CheckDatabaseFromTokens(tokens)
 	if !checkDb {
-		db = req.FormValue("db")
-		if db == "" {
-			db, _ = GetDatabaseFromTokens(tokens)
+		if _, err := GetDatabaseFromTokens(tokens); err == nil {
+			// on clause forbidden
+			return ErrOnClauseForbidden
 		}
+		db = req.FormValue("db")
 	}
 	if !showDb {
 		if db == "" {

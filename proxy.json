@@ -2,7 +2,7 @@
     "BACKENDS": {
         "influxdb-1": {
             "url": "http://127.0.0.1:8086",
-            "db": "test",
+            "db": "test1",
             "username": "",
             "password": "",
             "flush_size": 10000,
@@ -14,7 +14,7 @@
         },
         "influxdb-2": {
             "url": "http://127.0.0.1:8087",
-            "db": "test",
+            "db": "test2",
             "username": "",
             "password": "",
             "flush_size": 10000,
