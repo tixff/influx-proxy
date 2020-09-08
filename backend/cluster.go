@@ -20,17 +20,17 @@ import (
 )
 
 var (
-	ErrEmptyBackends      = errors.New("backends cannot be empty")
-	ErrEmptyKeyMaps       = errors.New("keymaps cannot be empty")
-	ErrBackendNotExist    = errors.New("backend not exists")
-	ErrMethodNotAllowed   = errors.New("method not allowed")
-	ErrEmptyQuery         = errors.New("empty query")
-	ErrDatabaseNotFound   = errors.New("database not found")
-	ErrDatabaseForbidden  = errors.New("database forbidden")
-	ErrQueryError         = errors.New("query error")
-	ErrGetMeasurement     = errors.New("can't get measurement")
-	ErrUnknownMeasurement = errors.New("unknown measurement")
-	ErrBackendsNotActive  = errors.New("backends not active")
+	ErrEmptyBackends       = errors.New("backends cannot be empty")
+	ErrEmptyKeyMaps        = errors.New("keymaps cannot be empty")
+	ErrBackendNotExist     = errors.New("backend not exists")
+	ErrMethodNotAllowed    = errors.New("method not allowed")
+	ErrEmptyQuery          = errors.New("empty query")
+	ErrDatabaseNotFound    = errors.New("database not found")
+	ErrDatabaseForbidden   = errors.New("database forbidden")
+	ErrQueryError          = errors.New("query error")
+	ErrGetMeasurement      = errors.New("can't get measurement")
+	ErrUnknownMeasurement  = errors.New("unknown measurement")
+	ErrBackendsUnavailable = errors.New("backends unavailable")
 )
 
 var StatisticsMeasurementName = "influx.proxy.statistics"
@@ -328,9 +328,9 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 			hb := api.(*Backends)
 			backends[i] = hb.URL
 		}
-		log.Printf("backends not active: %+v", backends)
+		log.Printf("backends unavailable: %v", backends)
 		atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
-		return ErrBackendsNotActive
+		return ErrBackendsUnavailable
 	}
 	atomic.AddInt64(&ic.stats.QueryRequestsFail, 1)
 	return ErrQueryError

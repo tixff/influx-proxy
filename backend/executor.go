@@ -151,7 +151,7 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	if inactive > 0 {
-		rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, inactive+len(bodies))
+		rsp.Err = fmt.Sprintf("%d/%d backends unavailable", inactive, inactive+len(bodies))
 	}
 	WriteResp(w, req, rsp, header, status)
 	return
@@ -189,7 +189,7 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 			header = qr.Header
 		}
 		if inactive > 0 {
-			rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(iqe.ic.backends))
+			rsp.Err = fmt.Sprintf("%d/%d backends unavailable", inactive, len(iqe.ic.backends))
 		}
 	}
 	WriteResp(w, req, rsp, header, http.StatusOK)
@@ -228,7 +228,7 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 			header = qr.Header
 		}
 		if inactive > 0 {
-			rsp.Err = fmt.Sprintf("%d/%d backends not active", inactive, len(apis))
+			rsp.Err = fmt.Sprintf("%d/%d backends unavailable", inactive, len(apis))
 		}
 	} else {
 		return ErrIllegalQL
