@@ -81,6 +81,24 @@ func NewTransport(tlsSkip bool) (transport *http.Transport) {
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: tlsSkip},
 	}
 }
+func CloneQueryRequest(r *http.Request) *http.Request {
+	// partial copy on demand
+	cr := new(http.Request)
+	*cr = *r
+	cr.Body = ioutil.NopCloser(&bytes.Buffer{})
+	cr.Form = CloneForm(r.Form)
+	return cr
+}
+
+func CloneForm(f url.Values) url.Values {
+	cf := make(url.Values, len(f))
+	for k, v := range f {
+		nv := make([]string, len(v))
+		copy(nv, v)
+		cf[k] = nv
+	}
+	return cf
+}
 
 func Compress(buf *bytes.Buffer, p []byte) (err error) {
 	zip := gzip.NewWriter(buf)
@@ -93,16 +111,6 @@ func Compress(buf *bytes.Buffer, p []byte) (err error) {
 		return
 	}
 	err = zip.Close()
-	return
-}
-
-func CloneForm(f url.Values) (cf url.Values) {
-	cf = make(url.Values, len(f))
-	for k, v := range f {
-		nv := make([]string, len(v))
-		copy(nv, v)
-		cf[k] = nv
-	}
 	return
 }
 
@@ -175,11 +183,12 @@ func (hb *HttpBackend) QuerySink(req *http.Request) (qr *QueryResult) {
 	}
 
 	q := strings.TrimSpace(req.FormValue("q"))
-	var resp *http.Response
-	resp, qr.Err = hb.transport.RoundTrip(req)
-	if qr.Err != nil {
-		log.Printf("query error: %s, the query is %s", qr.Err, q)
-		hb.active = false
+	resp, err := hb.transport.RoundTrip(req)
+	if err != nil {
+		if req.Header.Get("Query-Origin") != "Parallel" || err.Error() != "context canceled" {
+			qr.Err = err
+			log.Printf("query error: %s, the query is %s", err, q)
+		}
 		return
 	}
 	defer resp.Body.Close()
@@ -228,7 +237,6 @@ func (hb *HttpBackend) Query(w http.ResponseWriter, req *http.Request) (err erro
 	resp, err := hb.transport.RoundTrip(req)
 	if err != nil {
 		log.Printf("query error: %s, the query is %s", err, q)
-		hb.active = false
 		return
 	}
 	defer resp.Body.Close()
@@ -281,7 +289,6 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 	resp, err := hb.client.Do(req)
 	if err != nil {
 		log.Print("http error: ", err)
-		hb.active = false
 		return
 	}
 	defer resp.Body.Close()

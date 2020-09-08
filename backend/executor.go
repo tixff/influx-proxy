@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
@@ -69,14 +68,6 @@ func WriteResp(w http.ResponseWriter, req *http.Request, rsp *Response, header h
 	Write(w, body, header.Get("Content-Encoding") == "gzip")
 }
 
-func querySink(api BackendAPI, req http.Request, ch chan *QueryResult, wg *sync.WaitGroup) {
-	defer wg.Done()
-	req.Body = ioutil.NopCloser(&bytes.Buffer{})
-	req.Form = CloneForm(req.Form)
-	qr := api.QuerySink(&req)
-	ch <- qr
-}
-
 func (iqe *InfluxQLExecutor) Query(w http.ResponseWriter, req *http.Request, tokens []string) (err error) {
 	stmt := strings.ToLower(tokens[0])
 	if stmt == "show" {
@@ -97,8 +88,9 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 	var status int
 	var bodies [][]byte
 	var inactive int
+	var wg sync.WaitGroup
+	req.Header.Set("Query-Origin", "Parallel")
 	ch := make(chan *QueryResult, len(iqe.ic.backends))
-	wg := &sync.WaitGroup{}
 	for _, api := range iqe.ic.backends {
 		if api.IsWriteOnly() {
 			continue
@@ -108,10 +100,16 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 			continue
 		}
 		wg.Add(1)
-		go querySink(api, *req, ch, wg)
+		go func(api BackendAPI) {
+			defer wg.Done()
+			cr := CloneQueryRequest(req)
+			ch <- api.QuerySink(cr)
+		}(api)
 	}
-	wg.Wait()
-	close(ch)
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
 	for qr := range ch {
 		if qr.Status >= 400 {
 			rsp, _ := ResponseFromResponseBytes(qr.Body)
@@ -162,26 +160,33 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 	var header http.Header
 	var inactive int
 	if GetHeadStmtFromTokens(tokens, 2) == "create database" {
+		var wg sync.WaitGroup
+		req.Header.Set("Query-Origin", "Parallel")
 		ch := make(chan *QueryResult, len(iqe.ic.backends))
-		wg := &sync.WaitGroup{}
 		for _, api := range iqe.ic.backends {
 			if !api.IsActive() {
 				inactive++
 				continue
 			}
-			hb := api.(*Backends)
-			req.Form.Del("db")
-			if len(tokens) >= 3 {
-				tokens[2] = hb.DB
-				req.Form.Set("q", strings.Join(tokens, " "))
-			} else {
-				req.Form.Set("q", "create database "+hb.DB)
-			}
 			wg.Add(1)
-			go querySink(api, *req, ch, wg)
+			go func(api BackendAPI) {
+				defer wg.Done()
+				cr := CloneQueryRequest(req)
+				hb := api.(*Backends)
+				cr.Form.Del("db")
+				if len(tokens) >= 3 {
+					tokens[2] = hb.DB
+					cr.Form.Set("q", strings.Join(tokens, " "))
+				} else {
+					cr.Form.Set("q", "create database "+hb.DB)
+				}
+				ch <- api.QuerySink(cr)
+			}(api)
 		}
-		wg.Wait()
-		close(ch)
+		go func() {
+			wg.Wait()
+			close(ch)
+		}()
 		for qr := range ch {
 			if qr.Err != nil {
 				return qr.Err
@@ -191,6 +196,8 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 		if inactive > 0 {
 			rsp.Err = fmt.Sprintf("%d/%d backends unavailable", inactive, len(iqe.ic.backends))
 		}
+	} else {
+		return ErrIllegalQL
 	}
 	WriteResp(w, req, rsp, header, http.StatusOK)
 	return
@@ -209,18 +216,25 @@ func (iqe *InfluxQLExecutor) QueryDeleteOrDropQL(w http.ResponseWriter, req *htt
 		if !ok {
 			return ErrUnknownMeasurement
 		}
+		var wg sync.WaitGroup
+		req.Header.Set("Query-Origin", "Parallel")
 		ch := make(chan *QueryResult, len(iqe.ic.backends))
-		wg := &sync.WaitGroup{}
 		for _, api := range apis {
 			if !api.IsActive() {
 				inactive++
 				continue
 			}
 			wg.Add(1)
-			go querySink(api, *req, ch, wg)
+			go func(api BackendAPI) {
+				defer wg.Done()
+				cr := CloneQueryRequest(req)
+				ch <- api.QuerySink(cr)
+			}(api)
 		}
-		wg.Wait()
-		close(ch)
+		go func() {
+			wg.Wait()
+			close(ch)
+		}()
 		for qr := range ch {
 			if qr.Err != nil {
 				return qr.Err
