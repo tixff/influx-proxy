@@ -197,7 +197,7 @@ func (hb *HttpBackend) QuerySink(req *http.Request) (qr *QueryResult) {
 	if resp.Header.Get("Content-Encoding") == "gzip" {
 		respBody, qr.Err = gzip.NewReader(resp.Body)
 		if qr.Err != nil {
-			log.Printf("unable to decode gzip body")
+			log.Printf("unable to decode gzip body: %s", qr.Err)
 			return
 		}
 		defer respBody.Close()
