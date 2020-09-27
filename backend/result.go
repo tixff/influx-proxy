@@ -6,6 +6,8 @@
 package backend
 
 import (
+	"bytes"
+
 	"github.com/influxdata/influxdb1-client/models"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -44,10 +46,15 @@ func (rsp *Response) Marshal(indent bool) (b []byte) {
 	return
 }
 
-// TODO: multi queries in q?
+func (rsp *Response) Unmarshal(b []byte) (e error) {
+	dec := jsoniter.NewDecoder(bytes.NewReader(b))
+	dec.UseNumber()
+	return dec.Decode(rsp)
+}
+
 func SeriesFromResponseBytes(b []byte) (series models.Rows, e error) {
 	rsp := &Response{}
-	e = jsoniter.Unmarshal(b, rsp)
+	e = rsp.Unmarshal(b)
 	if e == nil && len(rsp.Results) > 0 && len(rsp.Results[0].Series) > 0 {
 		series = rsp.Results[0].Series
 	}
@@ -56,7 +63,7 @@ func SeriesFromResponseBytes(b []byte) (series models.Rows, e error) {
 
 func ResultsFromResponseBytes(b []byte) (results []*Result, e error) {
 	rsp := &Response{}
-	e = jsoniter.Unmarshal(b, rsp)
+	e = rsp.Unmarshal(b)
 	if e == nil && len(rsp.Results) > 0 {
 		results = rsp.Results
 	}
@@ -65,7 +72,7 @@ func ResultsFromResponseBytes(b []byte) (results []*Result, e error) {
 
 func ResponseFromResponseBytes(b []byte) (rsp *Response, e error) {
 	rsp = &Response{}
-	e = jsoniter.Unmarshal(b, rsp)
+	e = rsp.Unmarshal(b)
 	return
 }
 
