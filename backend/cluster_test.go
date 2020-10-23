@@ -89,6 +89,7 @@ func TestInfluxdbClusterWrite(t *testing.T) {
 	}
 	time.Sleep(time.Second)
 }
+
 func TestInfluxdbClusterPing(t *testing.T) {
 	ic, err := CreateTestInfluxCluster()
 	if err != nil {

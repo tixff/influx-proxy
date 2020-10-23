@@ -79,6 +79,7 @@ func TestHttpBackendWriteCompressed(t *testing.T) {
 		return
 	}
 }
+
 func TestHttpBackendPing(t *testing.T) {
 	cfg, ts := CreateTestBackendConfig("test")
 	defer ts.Close()

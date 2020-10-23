@@ -81,23 +81,11 @@ func NewTransport(tlsSkip bool) (transport *http.Transport) {
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: tlsSkip},
 	}
 }
-func CloneQueryRequest(r *http.Request) *http.Request {
-	// partial copy on demand
-	cr := new(http.Request)
-	*cr = *r
-	cr.Body = ioutil.NopCloser(&bytes.Buffer{})
-	cr.Form = CloneForm(r.Form)
-	return cr
-}
 
-func CloneForm(f url.Values) url.Values {
-	cf := make(url.Values, len(f))
-	for k, v := range f {
-		nv := make([]string, len(v))
-		copy(nv, v)
-		cf[k] = nv
-	}
-	return cf
+func CloneQueryRequest(r *http.Request) *http.Request {
+	cr := r.Clone(r.Context())
+	cr.Body = ioutil.NopCloser(&bytes.Buffer{})
+	return cr
 }
 
 func Compress(buf *bytes.Buffer, p []byte) (err error) {
