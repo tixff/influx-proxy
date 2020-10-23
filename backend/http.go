@@ -281,6 +281,7 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 	resp, err := hb.client.Do(req)
 	if err != nil {
 		log.Print("http error: ", err)
+		hb.active = false
 		return
 	}
 	defer resp.Body.Close()
@@ -308,6 +309,7 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 		err = ErrNotFound
 	case 500:
 		err = ErrInternal
+		hb.active = false
 	default: // mostly tcp connection timeout, or request entity too large
 		err = ErrUnknown
 	}
