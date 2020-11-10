@@ -121,8 +121,10 @@ func (iqe *InfluxQLExecutor) QueryCreateQL(w http.ResponseWriter, req *http.Requ
 			hb := api.(*Backends)
 			cr.Form.Del("db")
 			if len(tokens) >= 3 {
-				tokens[2] = hb.DB
-				cr.Form.Set("q", strings.Join(tokens, " "))
+				tokens2 := make([]string, len(tokens))
+				copy(tokens2, tokens)
+				tokens2[2] = hb.DB
+				cr.Form.Set("q", strings.Join(tokens2, " "))
 			} else {
 				cr.Form.Set("q", "create database "+hb.DB)
 			}

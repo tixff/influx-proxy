@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/panjf2000/ants/v2"
@@ -22,7 +23,7 @@ type Backends struct {
 	flushSize       int
 	flushTime       int
 	rewriteInterval int
-	rewriteRunning  bool
+	rewriteRunning  atomic.Value
 	ticker          *time.Ticker
 	ch_write        chan []byte      // nolint:golint
 	ch_timer        <-chan time.Time // nolint:golint
@@ -38,10 +39,10 @@ func NewBackends(cfg *BackendConfig, name string, datadir string) (bs *Backends,
 		flushSize:       cfg.FlushSize,
 		flushTime:       cfg.FlushTime,
 		rewriteInterval: cfg.RewriteInterval,
-		rewriteRunning:  false,
 		ticker:          time.NewTicker(time.Millisecond * time.Duration(cfg.RewriteInterval)),
 		ch_write:        make(chan []byte, 16),
 	}
+	bs.rewriteRunning.Store(false)
 	bs.fb, err = NewFileBackend(name, datadir)
 	if err != nil {
 		return
@@ -175,9 +176,13 @@ func (bs *Backends) Flush() {
 	})
 }
 
+func (bs *Backends) IsRewriteRunning() bool {
+	return bs.rewriteRunning.Load().(bool)
+}
+
 func (bs *Backends) Idle() {
-	if !bs.rewriteRunning && bs.fb.IsData() {
-		bs.rewriteRunning = true
+	if !bs.IsRewriteRunning() && bs.fb.IsData() {
+		bs.rewriteRunning.Store(true)
 		go bs.RewriteLoop()
 	}
 
@@ -196,7 +201,7 @@ func (bs *Backends) RewriteLoop() {
 			continue
 		}
 	}
-	bs.rewriteRunning = false
+	bs.rewriteRunning.Store(false)
 }
 
 func (bs *Backends) Rewrite() (err error) {

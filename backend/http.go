@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	gzip "github.com/klauspost/pgzip"
@@ -43,7 +44,7 @@ type HttpBackend struct { // nolint:golint
 	Username  string
 	Password  string
 	interval  int
-	active    bool
+	active    atomic.Value
 	writeOnly bool
 }
 
@@ -60,9 +61,9 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) { // nolint:golint
 		Username:  cfg.Username,
 		Password:  cfg.Password,
 		interval:  cfg.CheckInterval,
-		active:    true,
 		writeOnly: cfg.WriteOnly,
 	}
+	hb.active.Store(true)
 	go hb.CheckActive()
 	return
 }
@@ -115,7 +116,7 @@ func (hb *HttpBackend) CheckActive() {
 	var err error
 	for {
 		_, err = hb.Ping()
-		hb.active = err == nil
+		hb.active.Store(err == nil)
 		time.Sleep(time.Millisecond * time.Duration(hb.interval))
 	}
 }
@@ -125,7 +126,7 @@ func (hb *HttpBackend) IsWriteOnly() bool {
 }
 
 func (hb *HttpBackend) IsActive() bool {
-	return hb.active
+	return hb.active.Load().(bool)
 }
 
 func (hb *HttpBackend) Ping() (version string, err error) {
@@ -281,7 +282,7 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 	resp, err := hb.client.Do(req)
 	if err != nil {
 		log.Print("http error: ", err)
-		hb.active = false
+		hb.active.Store(false)
 		return
 	}
 	defer resp.Body.Close()
@@ -309,7 +310,7 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 		err = ErrNotFound
 	case 500:
 		err = ErrInternal
-		hb.active = false
+		hb.active.Store(false)
 	default: // mostly tcp connection timeout, or request entity too large
 		err = ErrUnknown
 	}
