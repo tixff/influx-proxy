@@ -45,6 +45,7 @@ type HttpBackend struct { // nolint:golint
 	Password  string
 	interval  int
 	active    atomic.Value
+	rewriting atomic.Value
 	writeOnly bool
 }
 
@@ -64,6 +65,7 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) { // nolint:golint
 		writeOnly: cfg.WriteOnly,
 	}
 	hb.active.Store(true)
+	hb.rewriting.Store(false)
 	go hb.CheckActive()
 	return
 }
@@ -121,12 +123,20 @@ func (hb *HttpBackend) CheckActive() {
 	}
 }
 
-func (hb *HttpBackend) IsWriteOnly() bool {
-	return hb.writeOnly
+func (hb *HttpBackend) IsActive() (b bool) {
+	return hb.active.Load().(bool)
 }
 
-func (hb *HttpBackend) IsActive() bool {
-	return hb.active.Load().(bool)
+func (hb *HttpBackend) IsRewriting() (b bool) {
+	return hb.rewriting.Load().(bool)
+}
+
+func (hb *HttpBackend) SetRewriting(b bool) {
+	hb.rewriting.Store(b)
+}
+
+func (hb *HttpBackend) IsWriteOnly() (b bool) {
+	return hb.writeOnly
 }
 
 func (hb *HttpBackend) Ping() (version string, err error) {
@@ -310,7 +320,6 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 		err = ErrNotFound
 	case 500:
 		err = ErrInternal
-		hb.active.Store(false)
 	default: // mostly tcp connection timeout, or request entity too large
 		err = ErrUnknown
 	}

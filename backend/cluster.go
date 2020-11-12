@@ -303,9 +303,9 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 		return ErrUnknownMeasurement
 	}
 
-	// pass non-active and write-only.
+	// pass non-active, rewriting or write-only.
 	for _, api := range apis {
-		if !api.IsActive() || api.IsWriteOnly() {
+		if !api.IsActive() || api.IsRewriting() || api.IsWriteOnly() {
 			continue
 		}
 		err = api.Query(w, req)
@@ -314,8 +314,9 @@ func (ic *InfluxCluster) Query(w http.ResponseWriter, req *http.Request) (err er
 		}
 	}
 
+	// pass non-active, non-writing (excluding rewriting and write-only).
 	for _, api := range apis {
-		if !api.IsActive() || !api.IsWriteOnly() {
+		if !api.IsActive() || !(api.IsRewriting() || api.IsWriteOnly()) {
 			continue
 		}
 		err = api.Query(w, req)

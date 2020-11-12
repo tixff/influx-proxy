@@ -74,9 +74,6 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 	req.Form.Del("chunked")
 	backends := make([]BackendAPI, 0)
 	for _, api := range iqe.ic.backends {
-		if api.IsWriteOnly() {
-			continue
-		}
 		backends = append(backends, api)
 	}
 	bodies, header, inactive, err := QueryInParallel(backends, req, nil)

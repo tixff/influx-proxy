@@ -13,6 +13,7 @@ type Querier interface {
 type BackendAPI interface { // nolint:golint
 	Querier
 	IsActive() (b bool)
+	IsRewriting() (b bool)
 	IsWriteOnly() (b bool)
 	Ping() (version string, err error)
 	Write(p []byte) (err error)
