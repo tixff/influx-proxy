@@ -87,13 +87,13 @@ func (iqe *InfluxQLExecutor) QueryShowQL(w http.ResponseWriter, req *http.Reques
 		stmt2 := GetHeadStmtFromTokens(tokens, 2)
 		stmt3 := GetHeadStmtFromTokens(tokens, 3)
 		if stmt2 == "show measurements" || stmt2 == "show series" || stmt2 == "show databases" {
-			rsp, err = iqe.reduceByValues(bodies)
+			rsp, err = reduceByValues(bodies)
 		} else if stmt3 == "show field keys" || stmt3 == "show tag keys" || stmt3 == "show tag values" {
-			rsp, err = iqe.reduceBySeries(bodies)
+			rsp, err = reduceBySeries(bodies)
 		} else if stmt3 == "show retention policies" {
-			rsp, err = iqe.concatByValues(bodies)
+			rsp, err = concatByValues(bodies)
 		} else if stmt2 == "show stats" {
-			rsp, err = iqe.concatByResults(bodies)
+			rsp, err = concatByResults(bodies)
 		} else {
 			rsp = ResponseFromSeries(nil)
 		}
@@ -198,7 +198,7 @@ func QueryInParallel(backends []BackendAPI, req *http.Request, fn func(BackendAP
 	return
 }
 
-func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte) (rsp *Response, err error) {
+func reduceByValues(bodies [][]byte) (rsp *Response, err error) {
 	var series models.Rows
 	var values [][]interface{}
 	valuesMap := make(map[string][]interface{})
@@ -230,7 +230,7 @@ func (iqe *InfluxQLExecutor) reduceByValues(bodies [][]byte) (rsp *Response, err
 	return ResponseFromSeries(series), nil
 }
 
-func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte) (rsp *Response, err error) {
+func reduceBySeries(bodies [][]byte) (rsp *Response, err error) {
 	var series models.Rows
 	seriesMap := make(map[string]*models.Row)
 	for _, b := range bodies {
@@ -250,7 +250,7 @@ func (iqe *InfluxQLExecutor) reduceBySeries(bodies [][]byte) (rsp *Response, err
 	return ResponseFromSeries(series), nil
 }
 
-func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rsp *Response, err error) {
+func concatByValues(bodies [][]byte) (rsp *Response, err error) {
 	var series models.Rows
 	var values [][]interface{}
 	for _, b := range bodies {
@@ -269,7 +269,7 @@ func (iqe *InfluxQLExecutor) concatByValues(bodies [][]byte) (rsp *Response, err
 	return ResponseFromSeries(series), nil
 }
 
-func (iqe *InfluxQLExecutor) concatByResults(bodies [][]byte) (rsp *Response, err error) {
+func concatByResults(bodies [][]byte) (rsp *Response, err error) {
 	var results []*Result
 	for _, b := range bodies {
 		_results, err := ResultsFromResponseBytes(b)
