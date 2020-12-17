@@ -1,0 +1,43 @@
+[BACKENDS.influxdb-1]
+url = "http://127.0.0.1:8086"
+db = "test1"
+username = ""
+password = ""
+flush_size = 100000
+flush_time = 10000
+timeout = 100000
+check_interval = 10000
+rewrite_interval = 100000
+conn_pool_size = 20
+
+[BACKENDS.influxdb-2]
+url = "http://127.0.0.1:8087"
+db = "test2"
+username = ""
+password = ""
+flush_size = 100000
+flush_time = 10000
+timeout = 100000
+check_interval = 10000
+rewrite_interval = 100000
+conn_pool_size = 20
+
+[KEYMAPS]
+cpu = ["influxdb-1"]
+mem = ["influxdb-2"]
+_default_ = ["influxdb-1"]
+
+[NODE]
+listen_addr = ":7076"
+db = "test"
+username = ""
+password = ""
+data_dir = "data"
+log_path = ""
+idle_timeout = 100000
+stat_interval = 100000
+write_tracing = false
+query_tracing = false
+https_enabled = false
+https_cert = ""
+https_key = ""

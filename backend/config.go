@@ -5,9 +5,9 @@
 package backend
 
 import (
-	"encoding/json"
 	"log"
-	"os"
+
+	"github.com/spf13/viper"
 )
 
 const (
@@ -15,53 +15,52 @@ const (
 )
 
 type NodeConfig struct {
-	ListenAddr   string `json:"listen_addr"`
-	DB           string `json:"db"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	DataDir      string `json:"data_dir"`
-	LogPath      string `json:"log_path"`
-	IdleTimeout  int    `json:"idle_timeout"`
-	StatInterval int    `json:"stat_interval"`
-	WriteTracing bool   `json:"write_tracing"`
-	QueryTracing bool   `json:"query_tracing"`
-	HTTPSEnabled bool   `json:"https_enabled"`
-	HTTPSCert    string `json:"https_cert"`
-	HTTPSKey     string `json:"https_key"`
+	ListenAddr   string `mapstructure:"listen_addr"`
+	DB           string `mapstructure:"db"`
+	Username     string `mapstructure:"username"`
+	Password     string `mapstructure:"password"`
+	DataDir      string `mapstructure:"data_dir"`
+	LogPath      string `mapstructure:"log_path"`
+	IdleTimeout  int    `mapstructure:"idle_timeout"`
+	StatInterval int    `mapstructure:"stat_interval"`
+	WriteTracing bool   `mapstructure:"write_tracing"`
+	QueryTracing bool   `mapstructure:"query_tracing"`
+	HTTPSEnabled bool   `mapstructure:"https_enabled"`
+	HTTPSCert    string `mapstructure:"https_cert"`
+	HTTPSKey     string `mapstructure:"https_key"`
 }
 
 type BackendConfig struct { // nolint:golint
-	URL             string `json:"url"`
-	DB              string `json:"db"`
-	Username        string `json:"username"`
-	Password        string `json:"password"`
-	FlushSize       int    `json:"flush_size"`
-	FlushTime       int    `json:"flush_time"`
-	Timeout         int    `json:"timeout"`
-	CheckInterval   int    `json:"check_interval"`
-	RewriteInterval int    `json:"rewrite_interval"`
-	ConnPoolSize    int    `json:"conn_pool_size"`
-	WriteOnly       bool   `json:"write_only"`
+	URL             string `mapstructure:"url"`
+	DB              string `mapstructure:"db"`
+	Username        string `mapstructure:"username"`
+	Password        string `mapstructure:"password"`
+	FlushSize       int    `mapstructure:"flush_size"`
+	FlushTime       int    `mapstructure:"flush_time"`
+	Timeout         int    `mapstructure:"timeout"`
+	CheckInterval   int    `mapstructure:"check_interval"`
+	RewriteInterval int    `mapstructure:"rewrite_interval"`
+	ConnPoolSize    int    `mapstructure:"conn_pool_size"`
+	WriteOnly       bool   `mapstructure:"write_only"`
 }
 
 // KEYMAPS
 // measurement: [BACKENDS keys], the key must be in the BACKENDS
 
 type FileConfigSource struct {
-	BACKENDS map[string]BackendConfig
-	KEYMAPS  map[string][]string
-	NODE     NodeConfig
+	BACKENDS map[string]BackendConfig `mapstructure:"BACKENDS"`
+	KEYMAPS  map[string][]string      `mapstructure:"KEYMAPS"`
+	NODE     NodeConfig               `mapstructure:"NODE"`
 }
 
 func NewFileConfigSource(cfgfile string) (fcs *FileConfigSource, err error) {
 	fcs = &FileConfigSource{}
-	file, err := os.Open(cfgfile)
+	viper.SetConfigFile(cfgfile)
+	err = viper.ReadInConfig()
 	if err != nil {
 		return
 	}
-	defer file.Close()
-	dec := json.NewDecoder(file)
-	err = dec.Decode(fcs)
+	viper.Unmarshal(fcs)
 	return
 }
 
