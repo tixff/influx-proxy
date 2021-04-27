@@ -12,8 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/chengshiwen/influx-proxy/backend"
-	"github.com/chengshiwen/influx-proxy/util"
+	"github.com/tixff/influx-proxy/backend"
+	"github.com/tixff/influx-proxy/util"
 	"github.com/influxdata/influxdb1-client/models"
 	"github.com/panjf2000/ants/v2"
 	"gopkg.in/natefinch/lumberjack.v2"
