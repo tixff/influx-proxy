@@ -49,7 +49,7 @@ Usage
 #### Quickstart
 
 ```sh
-$ git clone https://github.com/chengshiwen/influx-proxy.git
+$ git clone https://github.com/tixff/influx-proxy.git
 $ cd influx-proxy
 $ make
 $ ./bin/influx-proxy -config proxy.json
