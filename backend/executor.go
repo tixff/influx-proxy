@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/chengshiwen/influx-proxy/util"
+	"github.com/tixff/influx-proxy/util"
 	"github.com/influxdata/influxdb1-client/models"
 )
 
