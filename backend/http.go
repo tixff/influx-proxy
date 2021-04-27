@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/chengshiwen/influx-proxy/util"
+	"github.com/tixff/influx-proxy/util"
 	gzip "github.com/klauspost/pgzip"
 )
 
