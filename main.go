@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/chengshiwen/influx-proxy/backend"
-	"github.com/chengshiwen/influx-proxy/service"
-	"github.com/chengshiwen/influx-proxy/util"
+	"github.com/tixff/influx-proxy/backend"
+	"github.com/tixff/influx-proxy/service"
+	"github.com/tixff/influx-proxy/util"
 )
 
 var (
