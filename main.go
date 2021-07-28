@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/chengshiwen/influx-proxy/backend"
-	"github.com/chengshiwen/influx-proxy/service"
-	"github.com/chengshiwen/influx-proxy/util"
+	"github.com/tixff/influx-proxy/backend"
+	"github.com/tixff/influx-proxy/service"
+	"github.com/tixff/influx-proxy/util"
 )
 
 var (
@@ -24,6 +24,8 @@ var (
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 	log.SetOutput(os.Stdout)
+	//./bin/influx-proxy -config proxy.json
+	//            接受参数值            参数名称          参数默认值            参数说明
 	flag.StringVar(&ConfigFile, "config", "proxy.json", "proxy config file")
 	flag.BoolVar(&Version, "version", false, "proxy version")
 	flag.Parse()

@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/chengshiwen/influx-proxy/util"
+	"github.com/tixff/influx-proxy/util"
 )
 
 var SupportCmds = util.NewSet(

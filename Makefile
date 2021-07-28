@@ -20,10 +20,10 @@ linux: lint
 	GOOS=linux GOARCH=amd64 $(GO_BUILD)
 
 test:
-	go test -v github.com/chengshiwen/influx-proxy/backend
+	go test -v github.com/tixff/influx-proxy/backend
 
 bench:
-	go test -bench=. -run=none github.com/chengshiwen/influx-proxy/backend
+	go test -bench=. -run=none github.com/tixff/influx-proxy/backend
 
 run:
 	go run main.go

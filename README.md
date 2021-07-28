@@ -180,14 +180,14 @@ Only support match the following commands.
 HTTP Endpoints
 --------
 
-[HTTP Endpoints](https://github.com/chengshiwen/influx-proxy/wiki/HTTP-Endpoints)
+[HTTP Endpoints](https://github.com/tixff/influx-proxy/wiki/HTTP-Endpoints)
 
 Benchmark
 -----------
 
 There are three tools for benchmarking InfluxDB, which can also be applied to InfluxDB Proxy:
 
-* [influx-stress](https://github.com/chengshiwen/influx-stress) is a stress tool for generating artificial load on InfluxDB.
+* [influx-stress](https://github.com/tixff/influx-stress) is a stress tool for generating artificial load on InfluxDB.
 * [influxdb-comparisons](https://github.com/influxdata/influxdb-comparisons) contains code for benchmarking InfluxDB against other databases and time series solutions.
 * [tsbs](https://github.com/timescale/tsbs) (Time Series Benchmark Suite) is a tool for comparing and evaluating databases for time series data.
 

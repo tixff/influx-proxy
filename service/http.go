@@ -12,10 +12,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/chengshiwen/influx-proxy/backend"
-	"github.com/chengshiwen/influx-proxy/transfer"
-	"github.com/chengshiwen/influx-proxy/util"
 	gzip "github.com/klauspost/pgzip"
+	"github.com/tixff/influx-proxy/backend"
+	"github.com/tixff/influx-proxy/transfer"
+	"github.com/tixff/influx-proxy/util"
 )
 
 var (

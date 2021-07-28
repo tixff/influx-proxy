@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/chengshiwen/influx-proxy/util"
 	"github.com/influxdata/influxdb1-client/models"
+	"github.com/tixff/influx-proxy/util"
 )
 
 func QueryFromQL(w http.ResponseWriter, req *http.Request, ip *Proxy, tokens []string, db string) (body []byte, err error) {

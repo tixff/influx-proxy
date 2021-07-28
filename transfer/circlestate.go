@@ -3,7 +3,7 @@ package transfer
 import (
 	"sync"
 
-	"github.com/chengshiwen/influx-proxy/backend"
+	"github.com/tixff/influx-proxy/backend"
 )
 
 type Stats struct {
