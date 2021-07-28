@@ -1,11 +1,5 @@
 ### Makefile ---
 
-## Author: Shell.Xu
-## Version: $Id: Makefile,v 0.0 2017/01/17 03:44:24 shell Exp $
-## Copyright: 2017, Eleme <zhixiang.xu@ele.me>, BizSeer <chengshiwen0103@gmail.com>
-## License: MIT
-## Keywords:
-## X-URL:
 
 export GO_BUILD=GO111MODULE=on CGO_ENABLED=0 go build -o bin/influx-proxy -ldflags "-s -w -X main.GitCommit=$(shell git rev-parse --short HEAD) -X 'main.BuildTime=$(shell date '+%Y-%m-%d %H:%M:%S')'"
 
